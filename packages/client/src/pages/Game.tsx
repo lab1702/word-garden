@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Board } from '../components/Board.js';
 import { Rack } from '../components/Rack.js';
@@ -38,6 +39,15 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
     moveTentative,
     removeTentative,
   } = useGame(id!, onGameFinished);
+
+  const handleRackDropOutside = useCallback((rackIndex: number, clientX: number, clientY: number) => {
+    const el = document.elementFromPoint(clientX, clientY)?.closest('[data-row]') as HTMLElement | null;
+    if (!el) return;
+    const row = parseInt(el.getAttribute('data-row')!, 10);
+    const col = parseInt(el.getAttribute('data-col')!, 10);
+    if (isNaN(row) || isNaN(col)) return;
+    placeTileFromRack(row, col, rackIndex);
+  }, [placeTileFromRack]);
 
   if (!game) {
     return <div className={styles.loading}>Loading game...</div>;
@@ -95,6 +105,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
           exchangeMode={exchangeMode}
           exchangeSelection={exchangeSelection}
           onReturnToRack={removeTentative}
+          onDropOutside={handleRackDropOutside}
         />
       )}
 

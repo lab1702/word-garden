@@ -10,9 +10,10 @@ interface UseRackDragOptions {
   disabled?: boolean;
   onDragStart?: (index: number) => void;
   onDragEnd?: () => void;
+  onDropOutside?: (rackIndex: number, clientX: number, clientY: number) => void;
 }
 
-export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd }: UseRackDragOptions) {
+export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDropOutside }: UseRackDragOptions) {
   const [dragState, setDragState] = useState<DragState>({ dragIndex: null, overIndex: null });
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
@@ -81,18 +82,21 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd }: Use
     }
   }, [hitTest, onDragStart]);
 
-  const onPointerUp = useCallback(() => {
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (dragIndexRef.current === null) return;
 
     if (didDragRef.current) {
-      if (overIndexRef.current !== null && dragIndexRef.current !== overIndexRef.current) {
-        onReorder(dragIndexRef.current, overIndexRef.current);
+      const hit = hitTest(e.clientX, e.clientY);
+      if (hit !== null && dragIndexRef.current !== hit) {
+        onReorder(dragIndexRef.current, hit);
+      } else if (hit === null) {
+        onDropOutside?.(dragIndexRef.current, e.clientX, e.clientY);
       }
       onDragEnd?.();
     }
 
     cleanup();
-  }, [onReorder, cleanup, onDragEnd]);
+  }, [onReorder, cleanup, onDragEnd, onDropOutside, hitTest]);
 
   const onPointerCancel = useCallback(() => {
     if (didDragRef.current) {

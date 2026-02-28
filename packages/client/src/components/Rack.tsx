@@ -14,9 +14,10 @@ interface RackProps {
   exchangeMode?: boolean;
   exchangeSelection?: Set<number>;
   onReturnToRack?: (row: number, col: number) => void;
+  onDropOutside?: (rackIndex: number, clientX: number, clientY: number) => void;
 }
 
-export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection, onReturnToRack }: RackProps) {
+export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection, onReturnToRack, onDropOutside }: RackProps) {
   const { dragState: tileDragState, startDrag, endDrag } = useTileDrag();
 
   const handleDragStart = useCallback((index: number) => {
@@ -28,6 +29,7 @@ export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exc
     disabled: exchangeMode,
     onDragStart: handleDragStart,
     onDragEnd: endDrag,
+    onDropOutside,
   });
 
   const handleClick = useCallback((index: number) => {

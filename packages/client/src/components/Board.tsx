@@ -116,6 +116,8 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
           return (
             <div
               key={`${r}-${c}`}
+              data-row={r}
+              data-col={c}
               className={`${styles.cell} ${premiumClass} ${isLastMove ? styles.lastMove : ''} ${isHovered ? styles.dropHover : ''}`}
               onClick={() => onCellClick(r, c)}
             >
