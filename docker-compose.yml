@@ -25,9 +25,9 @@ services:
     environment:
       DATABASE_URL: postgres://wordgarden:wordgarden_dev@db:5432/wordgarden
       SESSION_SECRET: dev-secret-change-in-production
-      RP_ID: www.lab1702.com
-      RP_NAME: Word Garden
-      ORIGIN: https://www.lab1702.com
+      RP_ID: ${RP_ID:-localhost}
+      RP_NAME: ${RP_NAME:-Word Garden}
+      ORIGIN: ${ORIGIN:-http://localhost:9000}
     depends_on:
       db:
         condition: service_healthy
