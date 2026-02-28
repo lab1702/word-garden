@@ -8,9 +8,11 @@ interface DragState {
 interface UseRackDragOptions {
   onReorder: (fromIndex: number, toIndex: number) => void;
   disabled?: boolean;
+  onDragStart?: (index: number) => void;
+  onDragEnd?: () => void;
 }
 
-export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
+export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd }: UseRackDragOptions) {
   const [dragState, setDragState] = useState<DragState>({ dragIndex: null, overIndex: null });
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
@@ -67,6 +69,7 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
       didDragRef.current = true;
       suppressClickRef.current = true;
       setDragState({ dragIndex: dragIndexRef.current, overIndex: dragIndexRef.current });
+      onDragStart?.(dragIndexRef.current);
     }
 
     setDragOffset({ x: dx, y: dy });
@@ -76,21 +79,27 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
       overIndexRef.current = hit;
       setDragState({ dragIndex: dragIndexRef.current, overIndex: hit });
     }
-  }, [hitTest]);
+  }, [hitTest, onDragStart]);
 
   const onPointerUp = useCallback(() => {
     if (dragIndexRef.current === null) return;
 
-    if (didDragRef.current && overIndexRef.current !== null && dragIndexRef.current !== overIndexRef.current) {
-      onReorder(dragIndexRef.current, overIndexRef.current);
+    if (didDragRef.current) {
+      if (overIndexRef.current !== null && dragIndexRef.current !== overIndexRef.current) {
+        onReorder(dragIndexRef.current, overIndexRef.current);
+      }
+      onDragEnd?.();
     }
 
     cleanup();
-  }, [onReorder, cleanup]);
+  }, [onReorder, cleanup, onDragEnd]);
 
   const onPointerCancel = useCallback(() => {
+    if (didDragRef.current) {
+      onDragEnd?.();
+    }
     cleanup();
-  }, [cleanup]);
+  }, [cleanup, onDragEnd]);
 
   const setSlotRef = useCallback((index: number, el: HTMLDivElement | null) => {
     slotRefs.current[index] = el;
