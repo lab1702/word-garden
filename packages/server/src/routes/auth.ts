@@ -33,69 +33,76 @@ const challenges = new Map<string, string>();
 
 // POST /auth/register/password
 router.post('/register/password', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    res.status(400).json({ error: 'Username and password required' });
-    return;
-  }
-  if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-    res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
-    return;
-  }
-  if (containsProfanity(username)) {
-    res.status(400).json({ error: 'Username contains inappropriate language' });
-    return;
-  }
-  if (password.length < 8) {
-    res.status(400).json({ error: 'Password must be at least 8 characters' });
-    return;
-  }
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      res.status(400).json({ error: 'Username and password required' });
+      return;
+    }
+    if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
+      return;
+    }
+    if (containsProfanity(username)) {
+      res.status(400).json({ error: 'Username contains inappropriate language' });
+      return;
+    }
+    if (password.length < 8) {
+      res.status(400).json({ error: 'Password must be at least 8 characters' });
+      return;
+    }
 
-  const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
-  if (existing.rows.length > 0) {
-    res.status(409).json({ error: 'Username already taken' });
-    return;
+    const hash = await bcrypt.hash(password, 12);
+    const result = await pool.query(
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, rating',
+      [username, hash],
+    );
+    const user = result.rows[0];
+    const token = createToken({ userId: user.id, username: user.username });
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.json({ id: user.id, username: user.username, rating: user.rating });
+  } catch (err: any) {
+    if (err.code === '23505') {
+      res.status(409).json({ error: 'Username already taken' });
+      return;
+    }
+    throw err;
   }
-
-  const hash = await bcrypt.hash(password, 12);
-  const result = await pool.query(
-    'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, rating',
-    [username, hash],
-  );
-  const user = result.rows[0];
-  const token = createToken({ userId: user.id, username: user.username });
-  res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
-  res.json({ id: user.id, username: user.username, rating: user.rating });
 });
 
 // POST /auth/login/password
 router.post('/login/password', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    res.status(400).json({ error: 'Username and password required' });
-    return;
-  }
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      res.status(400).json({ error: 'Username and password required' });
+      return;
+    }
 
-  const result = await pool.query('SELECT id, username, password_hash, rating FROM users WHERE username = $1', [username]);
-  if (result.rows.length === 0) {
-    res.status(401).json({ error: 'Invalid credentials' });
-    return;
-  }
-  const user = result.rows[0];
-  if (!user.password_hash) {
-    res.status(401).json({ error: 'This account uses passkey authentication' });
-    return;
-  }
+    const result = await pool.query('SELECT id, username, password_hash, rating FROM users WHERE username = $1', [username]);
+    if (result.rows.length === 0) {
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
+    const user = result.rows[0];
+    if (!user.password_hash) {
+      res.status(401).json({ error: 'This account uses passkey authentication' });
+      return;
+    }
 
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) {
-    res.status(401).json({ error: 'Invalid credentials' });
-    return;
-  }
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
 
-  const token = createToken({ userId: user.id, username: user.username });
-  res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
-  res.json({ id: user.id, username: user.username, rating: user.rating });
+    const token = createToken({ userId: user.id, username: user.username });
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.json({ id: user.id, username: user.username, rating: user.rating });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
 });
 
 // POST /auth/register/passkey/options

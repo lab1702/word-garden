@@ -11,6 +11,8 @@ import type { TilePlacement, Tile } from '@word-garden/shared';
 
 const router = Router();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // POST /games — create a new game with invite code
 router.post('/', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
@@ -129,6 +131,11 @@ router.get('/', requireAuth, async (req, res) => {
 
 // GET /games/:id — get game state
 router.get('/:id', requireAuth, async (req, res) => {
+  const gameId = req.params.id as string;
+  if (!UUID_RE.test(gameId)) {
+    res.status(400).json({ error: 'Invalid game ID' });
+    return;
+  }
   const userId = req.user!.userId;
   const gameResult = await pool.query(
     `SELECT g.*, u1.username as player1_username, u2.username as player2_username
@@ -136,7 +143,7 @@ router.get('/:id', requireAuth, async (req, res) => {
      JOIN users u1 ON g.player1_id = u1.id
      LEFT JOIN users u2 ON g.player2_id = u2.id
      WHERE g.id = $1`,
-    [req.params.id],
+    [gameId],
   );
 
   if (gameResult.rows.length === 0) {
@@ -185,6 +192,11 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 // POST /games/:id/move
 router.post('/:id/move', requireAuth, async (req, res) => {
+  const gameId = req.params.id as string;
+  if (!UUID_RE.test(gameId)) {
+    res.status(400).json({ error: 'Invalid game ID' });
+    return;
+  }
   const userId = req.user!.userId;
   const { moveType, tiles, exchangeTiles } = req.body as {
     moveType: 'play' | 'pass' | 'exchange';
@@ -198,7 +210,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
     const gameResult = await client.query(
       'SELECT * FROM games WHERE id = $1 FOR UPDATE',
-      [req.params.id],
+      [gameId],
     );
 
     if (gameResult.rows.length === 0) {
@@ -469,6 +481,10 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
       sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id });
       res.json({ newRack, gameOver });
+    } else {
+      await client.query('ROLLBACK');
+      res.status(400).json({ error: 'Invalid move type' });
+      return;
     }
   } catch (err) {
     await client.query('ROLLBACK');
@@ -481,6 +497,11 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
 // POST /games/:id/resign
 router.post('/:id/resign', requireAuth, async (req, res) => {
+  const gameId = req.params.id as string;
+  if (!UUID_RE.test(gameId)) {
+    res.status(400).json({ error: 'Invalid game ID' });
+    return;
+  }
   const userId = req.user!.userId;
 
   const client = await pool.connect();
@@ -489,7 +510,7 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
 
     const gameResult = await client.query(
       'SELECT * FROM games WHERE id = $1 FOR UPDATE',
-      [req.params.id],
+      [gameId],
     );
 
     if (gameResult.rows.length === 0) {

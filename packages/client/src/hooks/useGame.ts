@@ -222,17 +222,9 @@ export function useGame(gameId: string) {
 
   const submitExchange = useCallback(async () => {
     if (exchangeSelection.size === 0) return;
-    setError('');
-    setSubmitting(true);
-    try {
-      await exchangeTiles([...exchangeSelection]);
-      setExchangeMode(false);
-      setExchangeSelection(new Set());
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+    await exchangeTiles([...exchangeSelection]);
+    setExchangeMode(false);
+    setExchangeSelection(new Set());
   }, [exchangeSelection, exchangeTiles]);
 
   const resign = useCallback(async () => {
