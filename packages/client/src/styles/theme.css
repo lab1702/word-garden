@@ -1,0 +1,14 @@
+:root {
+  --color-bg: #f5f0e8;
+  --color-board: #8B7355;
+  --color-tile: #DEB887;
+  --color-tile-text: #2C1810;
+  --color-premium-dw: #E8B4B8;
+  --color-premium-tw: #C75B5B;
+  --color-premium-dl: #B8D4E8;
+  --color-premium-tl: #5B8CC7;
+  --color-accent: #6B8E23;
+  --color-text: #2C1810;
+  --font-main: 'Georgia', serif;
+  --font-mono: 'Courier New', monospace;
+}
