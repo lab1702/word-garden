@@ -20,10 +20,18 @@ const clientDist = join(__dirname, '../../client/dist');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust one reverse proxy (e.g. Caddy/nginx) for correct X-Forwarded-For.
+// Increase if behind multiple proxies; incorrect value can allow rate-limit bypass.
 app.set('trust proxy', 1);
 app.use(cors({ origin: process.env.ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '16kb' }));
 app.use(cookieParser());
+
+// Content-Security-Policy for XSS defense-in-depth
+app.use((_req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'; font-src 'self'");
+  next();
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

@@ -3,10 +3,10 @@ import { Tile } from './Tile.js';
 import { useRackDrag } from '../hooks/useRackDrag.js';
 import { useTileDrag } from '../context/TileDragContext.js';
 import styles from './Rack.module.css';
-import type { Tile as TileType } from '@word-garden/shared';
+import type { RackTile } from '../hooks/useGame.js';
 
 interface RackProps {
-  tiles: TileType[];
+  tiles: RackTile[];
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onShuffle: () => void;
@@ -61,7 +61,7 @@ export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exc
 
           return (
             <div
-              key={i}
+              key={tile._id}
               ref={(el) => setSlotRef(i, el)}
               className={slotClass}
               style={getSlotStyle(i)}

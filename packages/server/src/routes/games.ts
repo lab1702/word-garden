@@ -159,6 +159,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
 // GET /games — list active/recent games
 router.get('/', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
+  const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 20, 1), 50);
+  const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
   const result = await pool.query(
     `SELECT g.id, g.player1_id, g.player2_id, g.player1_score, g.player2_score,
             g.current_turn, g.status, g.updated_at, g.invite_code,
@@ -169,8 +171,8 @@ router.get('/', requireAuth, async (req, res) => {
      LEFT JOIN users u2 ON g.player2_id = u2.id
      WHERE g.player1_id = $1 OR g.player2_id = $1
      ORDER BY g.updated_at DESC
-     LIMIT 20`,
-    [userId],
+     LIMIT $2 OFFSET $3`,
+    [userId, limit, offset],
   );
 
   const games = result.rows.map((g: any) => {

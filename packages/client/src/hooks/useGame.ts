@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiFetch } from '../api.js';
 import { useSSE } from './useSSE.js';
 import type { BoardCell, Tile, TilePlacement } from '@word-garden/shared';
+
+export type RackTile = Tile & { _id: number };
 
 interface GameData {
   id: string;
@@ -28,12 +30,15 @@ interface GameData {
 
 export function useGame(gameId: string, onGameFinished?: () => void) {
   const [game, setGame] = useState<GameData | null>(null);
-  const [rack, setRack] = useState<Tile[]>([]);
+  const nextTileId = useRef(0);
+  const assignIds = (tiles: Tile[]): RackTile[] =>
+    tiles.map(t => ({ ...t, _id: nextTileId.current++ }));
+  const [rack, setRack] = useState<RackTile[]>([]);
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null);
-  const [tentativePlacements, setTentativePlacements] = useState<(TilePlacement & { rackIndex: number; originalTile: Tile })[]>([]);
+  const [tentativePlacements, setTentativePlacements] = useState<(TilePlacement & { rackIndex: number; originalTile: RackTile })[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [pendingBlankPlacement, setPendingBlankPlacement] = useState<{ row: number; col: number; rackIndex: number; originalTile: Tile } | null>(null);
+  const [pendingBlankPlacement, setPendingBlankPlacement] = useState<{ row: number; col: number; rackIndex: number; originalTile: RackTile } | null>(null);
   const [exchangeMode, setExchangeMode] = useState(false);
   const [exchangeSelection, setExchangeSelection] = useState<Set<number>>(new Set());
 
@@ -41,7 +46,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     try {
       const data = await apiFetch<GameData>(`/games/${gameId}`);
       setGame(data);
-      setRack(data.rack);
+      setRack(assignIds(data.rack));
       setTentativePlacements([]);
       setSelectedTileIndex(null);
       setExchangeMode(false);
@@ -160,7 +165,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
 
   const clearPlacements = useCallback(() => {
     if (!game) return;
-    setRack(game.rack);
+    setRack(assignIds(game.rack));
     setTentativePlacements([]);
     setSelectedTileIndex(null);
   }, [game]);
@@ -203,7 +208,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
         body: JSON.stringify({ moveType: 'play', tiles }),
       });
       if (result.newRack) {
-        setRack(result.newRack);
+        setRack(assignIds(result.newRack));
       }
       await loadGame();
     } catch (err: any) {
@@ -238,7 +243,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
         body: JSON.stringify({ moveType: 'exchange', exchangeTiles: indices }),
       });
       if (result.newRack) {
-        setRack(result.newRack);
+        setRack(assignIds(result.newRack));
       }
       await loadGame();
     } catch (err: any) {

@@ -30,6 +30,7 @@ export const TILE_DISTRIBUTION: { letter: string; points: number; count: number 
   { letter: '',  points: 0,  count: 2 }, // blanks
 ];
 
+// Maps letter -> point value. Blank tiles map as '' -> 0.
 export const LETTER_POINTS: ReadonlyMap<string, number> = new Map(
   TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
 );
