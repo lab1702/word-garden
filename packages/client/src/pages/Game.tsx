@@ -94,6 +94,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
           onReorder={reorderRack}
           exchangeMode={exchangeMode}
           exchangeSelection={exchangeSelection}
+          onReturnToRack={removeTentative}
         />
       )}
 

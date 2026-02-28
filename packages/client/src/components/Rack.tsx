@@ -13,9 +13,10 @@ interface RackProps {
   onReorder: (fromIndex: number, toIndex: number) => void;
   exchangeMode?: boolean;
   exchangeSelection?: Set<number>;
+  onReturnToRack?: (row: number, col: number) => void;
 }
 
-export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection }: RackProps) {
+export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection, onReturnToRack }: RackProps) {
   const { dragState: tileDragState, startDrag, endDrag } = useTileDrag();
 
   const handleDragStart = useCallback((index: number) => {
@@ -37,11 +38,21 @@ export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exc
     onSelect(index);
   }, [onSelect, suppressClickRef]);
 
+  const handleRackPointerUp = useCallback(() => {
+    if (tileDragState?.source.type === 'board' && onReturnToRack) {
+      onReturnToRack(tileDragState.source.row, tileDragState.source.col);
+      endDrag();
+    }
+  }, [tileDragState, onReturnToRack, endDrag]);
+
   const isRackDropTarget = tileDragState?.source.type === 'board';
 
   return (
     <div className={styles.rackContainer}>
-      <div className={`${styles.rack}${isRackDropTarget ? ` ${styles.rackDropTarget}` : ''}`}>
+      <div
+        className={`${styles.rack}${isRackDropTarget ? ` ${styles.rackDropTarget}` : ''}`}
+        onPointerUp={handleRackPointerUp}
+      >
         {tiles.map((tile, i) => {
           const isDragging = dragState.dragIndex === i;
           const slotClass = `${styles.rackSlot}${isDragging ? ` ${styles.lifting}` : ''}`;
