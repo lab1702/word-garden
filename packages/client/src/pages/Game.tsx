@@ -3,6 +3,7 @@ import { Board } from '../components/Board.js';
 import { Rack } from '../components/Rack.js';
 import { BlankTilePicker } from '../components/BlankTilePicker.js';
 import { useGame } from '../hooks/useGame.js';
+import { TileDragProvider } from '../context/TileDragContext.js';
 import styles from './Game.module.css';
 
 export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
@@ -33,6 +34,9 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
     exitExchangeMode,
     toggleExchangeTile,
     submitExchange,
+    placeTileFromRack,
+    moveTentative,
+    removeTentative,
   } = useGame(id!, onGameFinished);
 
   if (!game) {
@@ -44,6 +48,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
   const isFinished = game.status === 'finished';
 
   return (
+    <TileDragProvider>
     <div className={styles.gamePage}>
       <button onClick={() => navigate('/')} className={styles.backButton}>
         &larr; Lobby
@@ -73,7 +78,11 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
         board={game.board}
         tentativePlacements={tentativePlacements}
         onCellClick={onCellClick}
+        onDropFromRack={placeTileFromRack}
+        onMoveTentative={moveTentative}
+        onReturnToRack={removeTentative}
         lastMoveTiles={game.lastMove?.tilesPlaced}
+        isMyTurn={isMyTurn}
       />
 
       {!isFinished && (
@@ -151,5 +160,6 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
         <BlankTilePicker onSelect={confirmBlankTile} onCancel={cancelBlankTile} />
       )}
     </div>
+    </TileDragProvider>
   );
 }
