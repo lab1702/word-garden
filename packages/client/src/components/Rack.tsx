@@ -7,9 +7,11 @@ interface RackProps {
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onShuffle: () => void;
+  exchangeMode?: boolean;
+  exchangeSelection?: Set<number>;
 }
 
-export function Rack({ tiles, selectedIndex, onSelect, onShuffle }: RackProps) {
+export function Rack({ tiles, selectedIndex, onSelect, onShuffle, exchangeMode, exchangeSelection }: RackProps) {
   return (
     <div className={styles.rackContainer}>
       <div className={styles.rack}>
@@ -18,7 +20,7 @@ export function Rack({ tiles, selectedIndex, onSelect, onShuffle }: RackProps) {
             <Tile
               letter={tile.letter}
               points={tile.points}
-              selected={selectedIndex === i}
+              selected={exchangeMode ? exchangeSelection?.has(i) : selectedIndex === i}
               onClick={() => onSelect(i)}
             />
           </div>

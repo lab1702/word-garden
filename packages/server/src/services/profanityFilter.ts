@@ -71,5 +71,12 @@ const BLOCKED_WORDS = [
 
 export function containsProfanity(username: string): boolean {
   const lower = username.toLowerCase();
-  return BLOCKED_WORDS.some((word) => lower.includes(word));
+  return BLOCKED_WORDS.some((word) => {
+    const idx = lower.indexOf(word);
+    if (idx === -1) return false;
+    // Check word boundaries: start/end of string or non-alphanumeric neighbor
+    const before = idx === 0 || !/[a-z0-9]/.test(lower[idx - 1]);
+    const after = idx + word.length >= lower.length || !/[a-z0-9]/.test(lower[idx + word.length]);
+    return before && after;
+  });
 }

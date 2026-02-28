@@ -1,6 +1,6 @@
 import {
   createEmptyBoard, BOARD_SIZE, CENTER, MAX_CONSECUTIVE_PASSES,
-  createTileBag, shuffleBag, RACK_SIZE, BINGO_BONUS,
+  createTileBag, shuffleBag, RACK_SIZE, BINGO_BONUS, TILE_DISTRIBUTION,
 } from '@word-garden/shared';
 import type { Board, Tile, TilePlacement, CellPremium } from '@word-garden/shared';
 import { isValidWord } from './dictionary.js';
@@ -237,11 +237,10 @@ export function scoreMove(board: Board, tiles: TilePlacement[]): ScoreResult {
   return { totalScore, wordScores, bingo };
 }
 
+const LETTER_POINTS = new Map(
+  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
+);
+
 function getLetterPoints(letter: string): number {
-  const points: Record<string, number> = {
-    A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1,
-    J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1,
-    S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10,
-  };
-  return points[letter.toUpperCase()] ?? 0;
+  return LETTER_POINTS.get(letter.toUpperCase()) ?? 0;
 }

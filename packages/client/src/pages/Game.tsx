@@ -26,6 +26,12 @@ export function Game() {
     pendingBlankPlacement,
     confirmBlankTile,
     cancelBlankTile,
+    exchangeMode,
+    exchangeSelection,
+    enterExchangeMode,
+    exitExchangeMode,
+    toggleExchangeTile,
+    submitExchange,
   } = useGame(id!);
 
   if (!game) {
@@ -72,9 +78,11 @@ export function Game() {
       {!isFinished && (
         <Rack
           tiles={rack}
-          selectedIndex={selectedTileIndex}
-          onSelect={setSelectedTileIndex}
+          selectedIndex={exchangeMode ? null : selectedTileIndex}
+          onSelect={exchangeMode ? toggleExchangeTile : setSelectedTileIndex}
           onShuffle={shuffleRack}
+          exchangeMode={exchangeMode}
+          exchangeSelection={exchangeSelection}
         />
       )}
 
@@ -82,24 +90,48 @@ export function Game() {
 
       {!isFinished && isMyTurn && (
         <div className={styles.actions}>
-          <button
-            onClick={submitMove}
-            disabled={tentativePlacements.length === 0 || submitting}
-            className={styles.playButton}
-          >
-            Play Word
-          </button>
-          {tentativePlacements.length > 0 && (
-            <button onClick={clearPlacements} className={styles.secondaryAction}>
-              Clear
-            </button>
+          {exchangeMode ? (
+            <>
+              <button
+                onClick={submitExchange}
+                disabled={exchangeSelection.size === 0 || submitting}
+                className={styles.playButton}
+              >
+                Exchange {exchangeSelection.size > 0 ? `(${exchangeSelection.size})` : ''}
+              </button>
+              <button onClick={exitExchangeMode} className={styles.secondaryAction}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={submitMove}
+                disabled={tentativePlacements.length === 0 || submitting}
+                className={styles.playButton}
+              >
+                Play Word
+              </button>
+              {tentativePlacements.length > 0 && (
+                <button onClick={clearPlacements} className={styles.secondaryAction}>
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={enterExchangeMode}
+                disabled={submitting || game.tilesRemaining === 0}
+                className={styles.secondaryAction}
+              >
+                Exchange
+              </button>
+              <button onClick={pass} disabled={submitting} className={styles.secondaryAction}>
+                Pass
+              </button>
+              <button onClick={resign} className={styles.dangerAction}>
+                Resign
+              </button>
+            </>
           )}
-          <button onClick={pass} disabled={submitting} className={styles.secondaryAction}>
-            Pass
-          </button>
-          <button onClick={resign} className={styles.dangerAction}>
-            Resign
-          </button>
         </div>
       )}
 

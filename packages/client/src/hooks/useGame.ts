@@ -33,6 +33,8 @@ export function useGame(gameId: string) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [pendingBlankPlacement, setPendingBlankPlacement] = useState<{ row: number; col: number; rackIndex: number } | null>(null);
+  const [exchangeMode, setExchangeMode] = useState(false);
+  const [exchangeSelection, setExchangeSelection] = useState<Set<number>>(new Set());
 
   const loadGame = useCallback(async () => {
     try {
@@ -198,6 +200,41 @@ export function useGame(gameId: string) {
     }
   }, [gameId, loadGame]);
 
+  const enterExchangeMode = useCallback(() => {
+    clearPlacements();
+    setExchangeMode(true);
+    setExchangeSelection(new Set());
+  }, [clearPlacements]);
+
+  const exitExchangeMode = useCallback(() => {
+    setExchangeMode(false);
+    setExchangeSelection(new Set());
+  }, []);
+
+  const toggleExchangeTile = useCallback((index: number) => {
+    setExchangeSelection(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const submitExchange = useCallback(async () => {
+    if (exchangeSelection.size === 0) return;
+    setError('');
+    setSubmitting(true);
+    try {
+      await exchangeTiles([...exchangeSelection]);
+      setExchangeMode(false);
+      setExchangeSelection(new Set());
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [exchangeSelection, exchangeTiles]);
+
   const resign = useCallback(async () => {
     setError('');
     try {
@@ -225,7 +262,12 @@ export function useGame(gameId: string) {
     shuffleRack,
     submitMove,
     pass,
-    exchangeTiles,
+    exchangeMode,
+    exchangeSelection,
+    enterExchangeMode,
+    exitExchangeMode,
+    toggleExchangeTile,
+    submitExchange,
     resign,
   };
 }
