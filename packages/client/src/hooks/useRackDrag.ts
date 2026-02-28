@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect, type CSSProperties } from 'react';
+import { useRef, useCallback, useState, type CSSProperties } from 'react';
 
 interface DragState {
   dragIndex: number | null;
@@ -13,8 +13,6 @@ interface UseRackDragOptions {
 export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
   const [dragState, setDragState] = useState<DragState>({ dragIndex: null, overIndex: null });
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
-  const [dropping, setDropping] = useState(false);
-  const [dropTarget, setDropTarget] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
 
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -23,13 +21,6 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
   const didDragRef = useRef(false);
   const dragIndexRef = useRef<number | null>(null);
   const overIndexRef = useRef<number | null>(null);
-  const dropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
-    };
-  }, []);
 
   const hitTest = useCallback((clientX: number, clientY: number): number | null => {
     const rects = rectsRef.current;
@@ -45,8 +36,6 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
   const cleanup = useCallback(() => {
     setDragState({ dragIndex: null, overIndex: null });
     setDragOffset(null);
-    setDropping(false);
-    setDropTarget(null);
     startPosRef.current = null;
     didDragRef.current = false;
     dragIndexRef.current = null;
@@ -93,27 +82,10 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     if (dragIndexRef.current === null) return;
 
     if (didDragRef.current && overIndexRef.current !== null && dragIndexRef.current !== overIndexRef.current) {
-      // Compute drop animation target: distance from current drag position to the target slot
-      const rects = rectsRef.current;
-      const fromRect = rects[dragIndexRef.current];
-      const toRect = rects[overIndexRef.current];
-      const targetX = toRect.left - fromRect.left;
-      const targetY = toRect.top - fromRect.top;
-
-      const savedDragIndex = dragIndexRef.current;
-      const savedOverIndex = overIndexRef.current;
-
-      setDropping(true);
-      setDropTarget({ x: targetX, y: targetY });
-
-      dropTimerRef.current = setTimeout(() => {
-        dropTimerRef.current = null;
-        onReorder(savedDragIndex, savedOverIndex);
-        cleanup();
-      }, 150);
-    } else {
-      cleanup();
+      onReorder(dragIndexRef.current, overIndexRef.current);
     }
+
+    cleanup();
   }, [onReorder, cleanup]);
 
   const onPointerCancel = useCallback(() => {
@@ -128,16 +100,8 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     const { dragIndex, overIndex } = dragState;
     if (dragIndex === null || overIndex === null) return {};
 
-    // The dragged tile follows the pointer (or animates to drop target)
+    // The dragged tile follows the pointer
     if (index === dragIndex) {
-      if (dropping && dropTarget) {
-        return {
-          transform: `translate(${dropTarget.x}px, ${dropTarget.y}px) scale(1.05)`,
-          transition: 'transform 0.15s ease',
-          zIndex: 10,
-          position: 'relative',
-        };
-      }
       if (dragOffset) {
         return {
           transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) scale(1.05)`,
@@ -173,7 +137,7 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
       transform: `translateX(${shift}px)`,
       transition: 'transform 0.15s ease',
     };
-  }, [dragState, dragOffset, dropping, dropTarget]);
+  }, [dragState, dragOffset]);
 
   return {
     dragState,
