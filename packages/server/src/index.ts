@@ -20,6 +20,7 @@ const clientDist = join(__dirname, '../../client/dist');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1);
 app.use(cors({ origin: process.env.ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '16kb' }));
 app.use(cookieParser());
