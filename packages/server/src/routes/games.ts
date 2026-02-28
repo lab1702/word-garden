@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import pool from '../db/pool.js';
 import { requireAuth } from '../middleware/auth.js';
 import { initializeGame, drawTilesForPlayer2, validatePlacement, findFormedWords, scoreMove } from '../services/gameEngine.js';
@@ -6,10 +7,24 @@ import { isValidWord } from '../services/dictionary.js';
 import { enterQueue, leaveQueue, generateInviteCode } from '../services/matchmaking.js';
 import { sendEvent } from '../services/sse.js';
 import { calculateNewRatings } from '../services/glicko2.js';
-import { RACK_SIZE, MAX_CONSECUTIVE_PASSES } from '@word-garden/shared';
+import { RACK_SIZE, MAX_CONSECUTIVE_PASSES, TILE_DISTRIBUTION } from '@word-garden/shared';
 import type { TilePlacement, Tile } from '@word-garden/shared';
 
+const LETTER_POINTS = new Map(
+  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
+);
+
 const router = Router();
+
+const gameLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' },
+});
+
+router.use(gameLimiter);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -17,16 +32,25 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 router.post('/', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
   const game = initializeGame(userId);
-  const inviteCode = generateInviteCode();
 
-  const result = await pool.query(
-    `INSERT INTO games (player1_id, board_state, tile_bag, player1_rack, invite_code, status)
-     VALUES ($1, $2, $3, $4, $5, 'waiting') RETURNING id, invite_code`,
-    [userId, JSON.stringify(game.board), JSON.stringify(game.tileBag),
-     JSON.stringify(game.player1Rack), inviteCode],
-  );
+  let result;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const inviteCode = generateInviteCode();
+    try {
+      result = await pool.query(
+        `INSERT INTO games (player1_id, board_state, tile_bag, player1_rack, invite_code, status)
+         VALUES ($1, $2, $3, $4, $5, 'waiting') RETURNING id, invite_code`,
+        [userId, JSON.stringify(game.board), JSON.stringify(game.tileBag),
+         JSON.stringify(game.player1Rack), inviteCode],
+      );
+      break;
+    } catch (err: any) {
+      if (err.code === '23505' && attempt < 2) continue;
+      throw err;
+    }
+  }
 
-  res.json({ id: result.rows[0].id, inviteCode: result.rows[0].invite_code });
+  res.json({ id: result!.rows[0].id, inviteCode: result!.rows[0].invite_code });
 });
 
 // POST /games/join/:inviteCode
@@ -292,7 +316,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       for (const t of tiles) {
         board[t.row][t.col].tile = {
           letter: t.letter,
-          points: t.isBlank ? 0 : rack.find(r => r.letter === t.letter)?.points ?? 0,
+          points: t.isBlank ? 0 : (LETTER_POINTS.get(t.letter.toUpperCase()) ?? 0),
         };
       }
 
@@ -441,35 +465,12 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       }
 
       const rackField = isPlayer1 ? 'player1_rack' : 'player2_rack';
-      const newConsecutivePasses = g.consecutive_passes + 1;
-      const gameOver = newConsecutivePasses >= MAX_CONSECUTIVE_PASSES;
-      let winnerId = null;
 
-      if (gameOver) {
-        const p1Rack: Tile[] = isPlayer1 ? newRack : g.player1_rack;
-        const p2Rack: Tile[] = isPlayer2 ? newRack : g.player2_rack;
-        const p1Deduct = p1Rack.reduce((s: number, t: Tile) => s + t.points, 0);
-        const p2Deduct = p2Rack.reduce((s: number, t: Tile) => s + t.points, 0);
-        const p1Score = g.player1_score - p1Deduct;
-        const p2Score = g.player2_score - p2Deduct;
-        winnerId = p1Score > p2Score ? g.player1_id : p2Score > p1Score ? g.player2_id : null;
-
-        await client.query(
-          `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
-           consecutive_passes = $4, player1_score = $5, player2_score = $6,
-           status = 'finished', winner_id = $7, updated_at = NOW() WHERE id = $8`,
-          [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1,
-           newConsecutivePasses, p1Score, p2Score, winnerId, g.id],
-        );
-        await updateRatings(client, g.player1_id, g.player2_id, winnerId);
-      } else {
-        await client.query(
-          `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
-           consecutive_passes = $4, updated_at = NOW() WHERE id = $5`,
-          [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1,
-           newConsecutivePasses, g.id],
-        );
-      }
+      await client.query(
+        `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
+         consecutive_passes = 0, updated_at = NOW() WHERE id = $4`,
+        [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1, g.id],
+      );
 
       await client.query(
         `INSERT INTO moves (game_id, player_id, move_type, score) VALUES ($1, $2, 'exchange', 0)`,
@@ -479,8 +480,8 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       await client.query('COMMIT');
 
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-      sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id });
-      res.json({ newRack, gameOver });
+      sendEvent(opponentId, 'opponent_moved', { gameId: g.id });
+      res.json({ newRack, gameOver: false });
     } else {
       await client.query('ROLLBACK');
       res.status(400).json({ error: 'Invalid move type' });

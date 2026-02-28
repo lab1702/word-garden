@@ -30,6 +30,7 @@ const origin = process.env.ORIGIN || 'http://localhost:5173';
 
 // In-memory challenge store (per-session, short-lived)
 const challenges = new Map<string, string>();
+const MAX_CHALLENGES = 10000;
 
 // POST /auth/register/password
 router.post('/register/password', async (req, res) => {
@@ -134,6 +135,10 @@ router.post('/register/passkey/options', async (req, res) => {
     attestationType: 'none',
   });
 
+  if (challenges.size >= MAX_CHALLENGES) {
+    res.status(503).json({ error: 'Too many pending registrations, try again later' });
+    return;
+  }
   challenges.set(username, options.challenge);
   setTimeout(() => challenges.delete(username), 5 * 60 * 1000);
 
@@ -219,6 +224,10 @@ router.post('/login/passkey/options', async (req, res) => {
     })),
   });
 
+  if (challenges.size >= MAX_CHALLENGES) {
+    res.status(503).json({ error: 'Too many pending logins, try again later' });
+    return;
+  }
   challenges.set(`login:${username}`, options.challenge);
   setTimeout(() => challenges.delete(`login:${username}`), 5 * 60 * 1000);
 

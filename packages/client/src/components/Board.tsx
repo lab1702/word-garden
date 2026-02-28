@@ -1,6 +1,11 @@
 import { Tile } from './Tile.js';
 import styles from './Board.module.css';
+import { TILE_DISTRIBUTION } from '@word-garden/shared';
 import type { BoardCell, TilePlacement } from '@word-garden/shared';
+
+const LETTER_POINTS = new Map(
+  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
+);
 
 interface BoardProps {
   board: BoardCell[][];
@@ -38,7 +43,7 @@ export function Board({ board, tentativePlacements, onCellClick, lastMoveTiles =
               {cell.tile ? (
                 <Tile letter={cell.tile.letter} points={cell.tile.points} />
               ) : tentative ? (
-                <Tile letter={tentative.letter} points={0} tentative />
+                <Tile letter={tentative.letter} points={tentative.isBlank ? 0 : (LETTER_POINTS.get(tentative.letter.toUpperCase()) ?? 0)} tentative />
               ) : (
                 <span className={styles.premiumLabel}>
                   {cell.premium ? PREMIUM_LABELS[cell.premium] : isCenter ? '\u2605' : ''}

@@ -5,6 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { runMigrations } from './db/migrate.js';
+import pool from './db/pool.js';
 import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
@@ -18,7 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({ origin: process.env.ORIGIN || 'http://localhost:5173', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '16kb' }));
 app.use(cookieParser());
 
 app.get('/api/health', (_req, res) => {
@@ -36,6 +37,10 @@ app.get('/api/events', requireAuth, (req, res) => {
     Connection: 'keep-alive',
   });
   res.write('event: connected\ndata: {}\n\n');
+  const heartbeat = setInterval(() => {
+    try { res.write(':heartbeat\n\n'); } catch { clearInterval(heartbeat); }
+  }, 25000);
+  res.on('close', () => clearInterval(heartbeat));
   addClient(req.user!.userId, res);
 });
 
@@ -55,9 +60,19 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+async function cleanupStaleRecords() {
+  try {
+    await pool.query(`DELETE FROM games WHERE status = 'waiting' AND created_at < NOW() - INTERVAL '24 hours'`);
+    await pool.query(`DELETE FROM matchmaking_queue WHERE queued_at < NOW() - INTERVAL '30 minutes'`);
+  } catch (err) {
+    console.error('Cleanup error:', err);
+  }
+}
+
 async function start() {
   await runMigrations();
   await loadDictionary();
+  setInterval(cleanupStaleRecords, 60 * 60 * 1000);
   app.listen(PORT, () => {
     console.log(`Word Garden server running on port ${PORT}`);
   });

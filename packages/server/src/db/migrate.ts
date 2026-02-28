@@ -22,15 +22,18 @@ export async function runMigrations(): Promise<void> {
   for (const file of files) {
     if (appliedSet.has(file)) continue;
     const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf-8');
-    await pool.query('BEGIN');
+    const client = await pool.connect();
     try {
-      await pool.query(sql);
-      await pool.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
-      await pool.query('COMMIT');
+      await client.query('BEGIN');
+      await client.query(sql);
+      await client.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
+      await client.query('COMMIT');
       console.log(`Migration applied: ${file}`);
     } catch (err) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       throw err;
+    } finally {
+      client.release();
     }
   }
 }

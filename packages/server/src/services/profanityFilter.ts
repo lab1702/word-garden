@@ -69,11 +69,18 @@ const BLOCKED_WORDS = [
   'whore',
 ];
 
+// Words that should always be blocked as substrings (never appear in legitimate words)
+const ALWAYS_BLOCK = new Set([
+  'fuck', 'nigger', 'nigga', 'cunt', 'kike', 'spic', 'twat', 'slut', 'whore',
+]);
+
 export function containsProfanity(username: string): boolean {
   const lower = username.toLowerCase();
   return BLOCKED_WORDS.some((word) => {
     const idx = lower.indexOf(word);
     if (idx === -1) return false;
+    // Always block the worst slurs regardless of surrounding characters
+    if (ALWAYS_BLOCK.has(word)) return true;
     // Check word boundaries: start/end of string or non-alphanumeric neighbor
     const before = idx === 0 || !/[a-z0-9]/.test(lower[idx - 1]);
     const after = idx + word.length >= lower.length || !/[a-z0-9]/.test(lower[idx + word.length]);
