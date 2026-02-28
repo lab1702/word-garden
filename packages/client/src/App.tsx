@@ -15,7 +15,7 @@ export function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.VITE_BASE_PATH || '/'}>
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '2px solid var(--color-border)' }}>
           <span style={{ fontFamily: 'Georgia, serif', fontWeight: 'bold', color: 'var(--color-text)' }}>
             {user.username} ({Math.round(user.rating)})
@@ -24,11 +24,13 @@ export function App() {
             Sign Out
           </button>
         </header>
-        <Routes>
-          <Route path="/" element={<Lobby username={user.username} rating={user.rating} onGameFinished={refreshUser} />} />
-          <Route path="/game/:id" element={<Game onGameFinished={refreshUser} />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <Routes>
+            <Route path="/" element={<Lobby username={user.username} rating={user.rating} onGameFinished={refreshUser} />} />
+            <Route path="/game/:id" element={<Game onGameFinished={refreshUser} />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
       </div>
     </BrowserRouter>
   );

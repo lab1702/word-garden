@@ -88,16 +88,18 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
         </div>
       </div>
 
-      <Board
-        board={game.board}
-        tentativePlacements={tentativePlacements}
-        onCellClick={onCellClick}
-        onDropFromRack={placeTileFromRack}
-        onMoveTentative={moveTentative}
-        onReturnToRack={removeTentative}
-        lastMoveTiles={game.lastMove?.tilesPlaced}
-        isMyTurn={isMyTurn}
-      />
+      <div className={styles.boardArea}>
+        <Board
+          board={game.board}
+          tentativePlacements={tentativePlacements}
+          onCellClick={onCellClick}
+          onDropFromRack={placeTileFromRack}
+          onMoveTentative={moveTentative}
+          onReturnToRack={removeTentative}
+          lastMoveTiles={game.lastMove?.tilesPlaced}
+          isMyTurn={isMyTurn}
+        />
+      </div>
 
       {!isFinished && (
         <Rack
