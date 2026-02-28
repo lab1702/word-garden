@@ -69,7 +69,21 @@ async function cleanupStaleRecords() {
   }
 }
 
+async function waitForDb(retries = 15, delayMs = 2000): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await pool.query('SELECT 1');
+      return;
+    } catch {
+      console.log(`Waiting for database... (attempt ${i + 1}/${retries})`);
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('Database not available after retries');
+}
+
 async function start() {
+  await waitForDb();
   await runMigrations();
   await loadDictionary();
   setInterval(cleanupStaleRecords, 60 * 60 * 1000);
