@@ -11,17 +11,22 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^13.2.3",
     "@word-garden/shared": "*",
-    "express": "^5.1.0",
-    "pg": "^8.13.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "cookie-parser": "^1.4.7"
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/pg": "^8.11.0",
-    "@types/cors": "^2.8.17",
+    "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.11.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
