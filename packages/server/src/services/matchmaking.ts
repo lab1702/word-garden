@@ -83,7 +83,7 @@ export async function sweepQueue(): Promise<void> {
       const matchResult = await client.query(
         `SELECT id, user_id, rating FROM matchmaking_queue
          WHERE user_id != $1
-         AND user_id != ALL($3::text[])
+         AND user_id != ALL($3::uuid[])
          AND rating BETWEEN $2 - (100 + EXTRACT(EPOCH FROM NOW() - queued_at) * 2)
                       AND $2 + (100 + EXTRACT(EPOCH FROM NOW() - queued_at) * 2)
          ORDER BY ABS(rating - $2) ASC
