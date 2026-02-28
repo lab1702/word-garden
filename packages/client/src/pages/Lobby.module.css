@@ -4,6 +4,32 @@
   padding: 1rem;
 }
 
+.lobbyGrid {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidePanel {
+  min-width: 0;
+}
+
+.centerPanel {
+  min-width: 0;
+}
+
+@media (min-width: 960px) {
+  .lobby {
+    max-width: 1100px;
+  }
+
+  .lobbyGrid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+
 .actions {
   display: flex;
   flex-direction: column;
@@ -104,6 +130,12 @@
   margin: 1.5rem 0 0.75rem;
   border-bottom: 2px solid var(--color-border);
   padding-bottom: 0.5rem;
+}
+
+@media (min-width: 960px) {
+  .sidePanel .sectionTitle {
+    margin-top: 0;
+  }
 }
 
 .gameCard {

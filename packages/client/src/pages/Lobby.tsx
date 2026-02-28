@@ -124,103 +124,111 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
 
   return (
     <div className={styles.lobby}>
-      {leaderboard.length > 0 && (
-        <section className={styles.leaderboard}>
-          <h2 className={styles.sectionTitle}>Top Players</h2>
-          <ol className={styles.leaderboardList}>
-            {leaderboard.map(entry => (
-              <li
-                key={entry.userId}
-                className={`${styles.leaderboardEntry} ${entry.userId === userId ? styles.leaderboardSelf : ''}`}
-              >
-                <span className={styles.leaderboardRank}>#{entry.rank}</span>
-                <span className={styles.leaderboardName}>{entry.username}</span>
-                <span className={styles.leaderboardRating}>{entry.rating}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+      <div className={styles.lobbyGrid}>
+        <div className={styles.sidePanel}>
+          {leaderboard.length > 0 && (
+            <section className={styles.leaderboard}>
+              <h2 className={styles.sectionTitle}>Top Players</h2>
+              <ol className={styles.leaderboardList}>
+                {leaderboard.map(entry => (
+                  <li
+                    key={entry.userId}
+                    className={`${styles.leaderboardEntry} ${entry.userId === userId ? styles.leaderboardSelf : ''}`}
+                  >
+                    <span className={styles.leaderboardRank}>#{entry.rank}</span>
+                    <span className={styles.leaderboardName}>{entry.username}</span>
+                    <span className={styles.leaderboardRating}>{entry.rating}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </div>
 
-      <div className={styles.actions}>
-        <button onClick={createGame} className={styles.actionButton}>Create Game</button>
+        <div className={styles.centerPanel}>
+          <div className={styles.actions}>
+            <button onClick={createGame} className={styles.actionButton}>Create Game</button>
 
-        {matchmaking ? (
-          <button onClick={cancelMatch} className={styles.actionButtonCancel}>Cancel Search</button>
-        ) : (
-          <button onClick={findMatch} className={styles.actionButton}>Find Match</button>
-        )}
+            {matchmaking ? (
+              <button onClick={cancelMatch} className={styles.actionButtonCancel}>Cancel Search</button>
+            ) : (
+              <button onClick={findMatch} className={styles.actionButton}>Find Match</button>
+            )}
 
-        <div className={styles.joinRow}>
-          <input
-            type="text"
-            placeholder="Enter invite code"
-            value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-            className={styles.joinInput}
-          />
-          <button onClick={joinGame} className={styles.joinButton} disabled={!joinCode}>Join</button>
+            <div className={styles.joinRow}>
+              <input
+                type="text"
+                placeholder="Enter invite code"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                className={styles.joinInput}
+              />
+              <button onClick={joinGame} className={styles.joinButton} disabled={!joinCode}>Join</button>
+            </div>
+          </div>
+
+          {inviteCode && (
+            <div className={styles.inviteBox}>
+              Share this code: <strong>{inviteCode}</strong>
+              <button onClick={() => { navigator.clipboard.writeText(inviteCode); }} className={styles.copyButton}>Copy</button>
+            </div>
+          )}
+
+          {error && <p className={styles.error}>{error}</p>}
+          {matchmaking && <p className={styles.searching}>Searching for opponent...</p>}
+
+          {waitingGames.length > 0 && (
+            <section>
+              <h2 className={styles.sectionTitle}>Waiting for Opponent</h2>
+              {waitingGames.map(g => (
+                <div key={g.id} className={styles.gameCard}>
+                  <span>Invite: {g.inviteCode}</span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {activeGames.length > 0 && (
+            <section>
+              <h2 className={styles.sectionTitle}>Active Games</h2>
+              {activeGames.map(g => (
+                <div
+                  key={g.id}
+                  className={`${styles.gameCard} ${g.isYourTurn ? styles.yourTurn : ''}`}
+                  onClick={() => navigate(`/game/${g.id}`)}
+                >
+                  <div className={styles.gameInfo}>
+                    <span className={styles.opponent}>vs {g.opponentUsername}</span>
+                    <span className={styles.score}>{g.playerScore} - {g.opponentScore}</span>
+                  </div>
+                  <span className={styles.turnIndicator}>
+                    {g.isYourTurn ? 'Your turn' : "Opponent's turn"}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+        </div>
+
+        <div className={styles.sidePanel}>
+          {finishedGames.length > 0 && (
+            <section>
+              <h2 className={styles.sectionTitle}>Recent Games</h2>
+              {finishedGames.map(g => (
+                <div key={g.id} className={styles.gameCard} onClick={() => navigate(`/game/${g.id}`)}>
+                  <div className={styles.gameInfo}>
+                    <span className={styles.opponent}>vs {g.opponentUsername}</span>
+                    <span className={styles.score}>{g.playerScore} - {g.opponentScore}</span>
+                  </div>
+                  <span className={styles.finished}>
+                    {g.playerScore > g.opponentScore ? 'Won' : g.playerScore < g.opponentScore ? 'Lost' : 'Draw'}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
         </div>
       </div>
-
-      {inviteCode && (
-        <div className={styles.inviteBox}>
-          Share this code: <strong>{inviteCode}</strong>
-          <button onClick={() => { navigator.clipboard.writeText(inviteCode); }} className={styles.copyButton}>Copy</button>
-        </div>
-      )}
-
-      {error && <p className={styles.error}>{error}</p>}
-      {matchmaking && <p className={styles.searching}>Searching for opponent...</p>}
-
-      {waitingGames.length > 0 && (
-        <section>
-          <h2 className={styles.sectionTitle}>Waiting for Opponent</h2>
-          {waitingGames.map(g => (
-            <div key={g.id} className={styles.gameCard}>
-              <span>Invite: {g.inviteCode}</span>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {activeGames.length > 0 && (
-        <section>
-          <h2 className={styles.sectionTitle}>Active Games</h2>
-          {activeGames.map(g => (
-            <div
-              key={g.id}
-              className={`${styles.gameCard} ${g.isYourTurn ? styles.yourTurn : ''}`}
-              onClick={() => navigate(`/game/${g.id}`)}
-            >
-              <div className={styles.gameInfo}>
-                <span className={styles.opponent}>vs {g.opponentUsername}</span>
-                <span className={styles.score}>{g.playerScore} - {g.opponentScore}</span>
-              </div>
-              <span className={styles.turnIndicator}>
-                {g.isYourTurn ? 'Your turn' : "Opponent's turn"}
-              </span>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {finishedGames.length > 0 && (
-        <section>
-          <h2 className={styles.sectionTitle}>Recent Games</h2>
-          {finishedGames.map(g => (
-            <div key={g.id} className={styles.gameCard} onClick={() => navigate(`/game/${g.id}`)}>
-              <div className={styles.gameInfo}>
-                <span className={styles.opponent}>vs {g.opponentUsername}</span>
-                <span className={styles.score}>{g.playerScore} - {g.opponentScore}</span>
-              </div>
-              <span className={styles.finished}>
-                {g.playerScore > g.opponentScore ? 'Won' : g.playerScore < g.opponentScore ? 'Lost' : 'Draw'}
-              </span>
-            </div>
-          ))}
-        </section>
-      )}
     </div>
   );
 }
