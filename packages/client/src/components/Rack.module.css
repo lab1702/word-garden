@@ -18,7 +18,6 @@
 .rackSlot {
   width: clamp(36px, 8vw, 52px);
   height: clamp(36px, 8vw, 52px);
-  transition: transform 0.15s ease;
 }
 
 .lifting {
