@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wordgarden
+      POSTGRES_PASSWORD: wordgarden_dev
+      POSTGRES_DB: wordgarden
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://wordgarden:wordgarden_dev@db:5432/wordgarden
+      SESSION_SECRET: dev-secret-change-in-production
+      RP_ID: localhost
+      RP_NAME: Word Garden
+      ORIGIN: http://localhost:3000
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
