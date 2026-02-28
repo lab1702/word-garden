@@ -91,6 +91,27 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     setSelectedTileIndex(null);
   }, [game, isMyTurn, selectedTileIndex, rack, tentativePlacements]);
 
+  const placeTileFromRack = useCallback((row: number, col: number, rackIndex: number) => {
+    if (!game || !isMyTurn) return;
+    if (game.board[row][col].tile) return;
+    if (tentativePlacements.some(t => t.row === row && t.col === col)) return;
+
+    const tile = rack[rackIndex];
+    if (!tile) return;
+
+    if (tile.letter === '') {
+      setPendingBlankPlacement({ row, col, rackIndex, originalTile: tile });
+      return;
+    }
+
+    setTentativePlacements(prev => [
+      ...prev,
+      { row, col, letter: tile.letter, isBlank: false, rackIndex, originalTile: tile },
+    ]);
+    setRack(prev => prev.filter((_, i) => i !== rackIndex));
+    setSelectedTileIndex(null);
+  }, [game, isMyTurn, rack, tentativePlacements]);
+
   const confirmBlankTile = useCallback((letter: string) => {
     if (!pendingBlankPlacement) return;
     const { row, col, rackIndex, originalTile } = pendingBlankPlacement;
@@ -114,6 +135,18 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     setRack(prev => [...prev, placement.originalTile]);
     setTentativePlacements(prev => prev.filter(t => !(t.row === row && t.col === col)));
   }, [tentativePlacements]);
+
+  const moveTentative = useCallback((fromRow: number, fromCol: number, toRow: number, toCol: number) => {
+    if (!game || !isMyTurn) return;
+    if (game.board[toRow][toCol].tile) return;
+    if (tentativePlacements.some(t => t.row === toRow && t.col === toCol)) return;
+
+    setTentativePlacements(prev => prev.map(t =>
+      t.row === fromRow && t.col === fromCol
+        ? { ...t, row: toRow, col: toCol }
+        : t
+    ));
+  }, [game, isMyTurn, tentativePlacements]);
 
   const onCellClick = useCallback((row: number, col: number) => {
     // If there's a tentative tile here, remove it
@@ -265,6 +298,9 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     confirmBlankTile,
     cancelBlankTile,
     onCellClick,
+    placeTileFromRack,
+    moveTentative,
+    removeTentative,
     clearPlacements,
     shuffleRack,
     reorderRack,
