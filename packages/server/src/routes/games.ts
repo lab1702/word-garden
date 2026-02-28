@@ -7,7 +7,7 @@ import { isValidWord } from '../services/dictionary.js';
 import { enterQueue, leaveQueue, generateInviteCode } from '../services/matchmaking.js';
 import { sendEvent } from '../services/sse.js';
 import { calculateNewRatings } from '../services/glicko2.js';
-import { RACK_SIZE, MAX_CONSECUTIVE_PASSES, TILE_DISTRIBUTION } from '@word-garden/shared';
+import { RACK_SIZE, MAX_CONSECUTIVE_PASSES, TILE_DISTRIBUTION, BOARD_SIZE } from '@word-garden/shared';
 import type { TilePlacement, Tile } from '@word-garden/shared';
 
 const LETTER_POINTS = new Map(
@@ -271,10 +271,22 @@ router.post('/:id/move', requireAuth, async (req, res) => {
     const isFirstMove = board.every((row: any[]) => row.every((cell: any) => cell.tile === null));
 
     if (moveType === 'play') {
-      if (!tiles || tiles.length === 0) {
+      if (!Array.isArray(tiles) || tiles.length === 0 || tiles.length > RACK_SIZE) {
         await client.query('ROLLBACK');
-        res.status(400).json({ error: 'No tiles provided' });
+        res.status(400).json({ error: 'Invalid tiles' });
         return;
+      }
+
+      for (const t of tiles) {
+        if (typeof t.row !== 'number' || typeof t.col !== 'number' ||
+            !Number.isInteger(t.row) || !Number.isInteger(t.col) ||
+            t.row < 0 || t.row >= BOARD_SIZE || t.col < 0 || t.col >= BOARD_SIZE ||
+            typeof t.letter !== 'string' || t.letter.length !== 1 || !/^[A-Za-z]$/.test(t.letter) ||
+            typeof t.isBlank !== 'boolean') {
+          await client.query('ROLLBACK');
+          res.status(400).json({ error: 'Invalid tile placement data' });
+          return;
+        }
       }
 
       // Validate tiles are in player's rack

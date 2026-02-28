@@ -7,9 +7,9 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
   }
   const res = await fetch(`${BASE}${path}`, {
+    ...options,
     credentials: 'include',
     headers,
-    ...options,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));

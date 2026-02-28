@@ -29,10 +29,10 @@ export function useGame(gameId: string) {
   const [game, setGame] = useState<GameData | null>(null);
   const [rack, setRack] = useState<Tile[]>([]);
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null);
-  const [tentativePlacements, setTentativePlacements] = useState<(TilePlacement & { rackIndex: number })[]>([]);
+  const [tentativePlacements, setTentativePlacements] = useState<(TilePlacement & { rackIndex: number; originalTile: Tile })[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [pendingBlankPlacement, setPendingBlankPlacement] = useState<{ row: number; col: number; rackIndex: number } | null>(null);
+  const [pendingBlankPlacement, setPendingBlankPlacement] = useState<{ row: number; col: number; rackIndex: number; originalTile: Tile } | null>(null);
   const [exchangeMode, setExchangeMode] = useState(false);
   const [exchangeSelection, setExchangeSelection] = useState<Set<number>>(new Set());
 
@@ -73,14 +73,14 @@ export function useGame(gameId: string) {
 
     // Blank tile — prompt for letter choice
     if (tile.letter === '') {
-      setPendingBlankPlacement({ row, col, rackIndex: selectedTileIndex });
+      setPendingBlankPlacement({ row, col, rackIndex: selectedTileIndex, originalTile: tile });
       setSelectedTileIndex(null);
       return;
     }
 
     setTentativePlacements(prev => [
       ...prev,
-      { row, col, letter: tile.letter, isBlank: false, rackIndex: selectedTileIndex },
+      { row, col, letter: tile.letter, isBlank: false, rackIndex: selectedTileIndex, originalTile: tile },
     ]);
 
     // Remove from available rack tiles
@@ -90,11 +90,11 @@ export function useGame(gameId: string) {
 
   const confirmBlankTile = useCallback((letter: string) => {
     if (!pendingBlankPlacement) return;
-    const { row, col, rackIndex } = pendingBlankPlacement;
+    const { row, col, rackIndex, originalTile } = pendingBlankPlacement;
 
     setTentativePlacements(prev => [
       ...prev,
-      { row, col, letter, isBlank: true, rackIndex },
+      { row, col, letter, isBlank: true, rackIndex, originalTile },
     ]);
     setRack(prev => prev.filter((_, i) => i !== rackIndex));
     setPendingBlankPlacement(null);
@@ -106,13 +106,11 @@ export function useGame(gameId: string) {
 
   const removeTentative = useCallback((row: number, col: number) => {
     const placement = tentativePlacements.find(t => t.row === row && t.col === col);
-    if (!placement || !game) return;
+    if (!placement) return;
 
-    // Find the original tile from game rack
-    const originalTile = game.rack[placement.rackIndex];
-    setRack(prev => [...prev, originalTile]);
+    setRack(prev => [...prev, placement.originalTile]);
     setTentativePlacements(prev => prev.filter(t => !(t.row === row && t.col === col)));
-  }, [tentativePlacements, game]);
+  }, [tentativePlacements]);
 
   const onCellClick = useCallback((row: number, col: number) => {
     // If there's a tentative tile here, remove it

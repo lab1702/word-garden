@@ -48,8 +48,8 @@ router.post('/register/password', async (req, res) => {
       res.status(400).json({ error: 'Username contains inappropriate language' });
       return;
     }
-    if (password.length < 8) {
-      res.status(400).json({ error: 'Password must be at least 8 characters' });
+    if (password.length < 8 || password.length > 72) {
+      res.status(400).json({ error: 'Password must be between 8 and 72 characters' });
       return;
     }
 
@@ -87,7 +87,7 @@ router.post('/login/password', async (req, res) => {
     }
     const user = result.rows[0];
     if (!user.password_hash) {
-      res.status(401).json({ error: 'This account uses passkey authentication' });
+      res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
 
@@ -213,7 +213,7 @@ router.post('/login/passkey/options', async (req, res) => {
   );
 
   if (creds.rows.length === 0) {
-    res.status(404).json({ error: 'No passkeys found for this user' });
+    res.status(401).json({ error: 'Invalid credentials' });
     return;
   }
 

@@ -33,7 +33,9 @@ export function Lobby({ username, rating }: LobbyProps) {
     try {
       const data = await apiFetch<GameSummary[]>('/games');
       setGames(data);
-    } catch {}
+    } catch (err: any) {
+      console.error('Failed to load games:', err);
+    }
   }, []);
 
   useEffect(() => { loadGames(); }, [loadGames]);
@@ -87,8 +89,13 @@ export function Lobby({ username, rating }: LobbyProps) {
   };
 
   const cancelMatch = async () => {
-    await apiFetch('/games/matchmake', { method: 'DELETE' });
-    setMatchmaking(false);
+    try {
+      await apiFetch('/games/matchmake', { method: 'DELETE' });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setMatchmaking(false);
+    }
   };
 
   const activeGames = games.filter(g => g.status === 'active');
