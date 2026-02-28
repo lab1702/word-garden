@@ -105,6 +105,7 @@ The Vite dev server proxies `/api` and `/events` requests to the Express server 
 | `RP_ID` | WebAuthn relying party ID (your domain) | `localhost` |
 | `RP_NAME` | WebAuthn relying party display name | `Word Garden` |
 | `ORIGIN` | Full origin URL for WebAuthn and CORS | `http://localhost:5173` |
+| `VITE_BASE_PATH` | Subpath prefix for serving behind a reverse proxy (build-time only) | _(empty)_ |
 
 For production, set `SESSION_SECRET` to a strong random value and update `RP_ID`, `RP_NAME`, and `ORIGIN` to match your domain.
 
@@ -208,3 +209,29 @@ app:
 2. Use a managed PostgreSQL instance and update `DATABASE_URL`
 3. Put a reverse proxy (nginx, Caddy) in front for TLS termination
 4. The Docker image is self-contained — it serves both the API and static client assets on port 3000
+
+### Serving at a Subpath
+
+To serve the app at a subpath (e.g. `https://example.com/word/`), set `VITE_BASE_PATH` at build time. The reverse proxy should strip the prefix before forwarding to the app.
+
+The default `docker-compose.yml` builds with `VITE_BASE_PATH=/word`. To change or remove it:
+
+```yaml
+app:
+  build:
+    context: .
+    args:
+      VITE_BASE_PATH: /your-path   # or "" for root
+```
+
+Example Caddy config:
+
+```
+example.com {
+    handle_path /word/* {
+        reverse_proxy app:3000
+    }
+}
+```
+
+`handle_path` strips the `/word` prefix, so the server receives clean `/api/...` paths. No server-side changes are needed — only the client build is affected.
