@@ -128,7 +128,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
         <div className={styles.sidePanel}>
           {leaderboard.length > 0 && (
             <section className={styles.leaderboard}>
-              <h2 className={styles.sectionTitle}>Top Players</h2>
+              <h2 className={styles.sectionTitle}>Top 10 Players</h2>
               <ol className={styles.leaderboardList}>
                 {leaderboard.map(entry => (
                   <li
@@ -213,7 +213,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
         <div className={styles.sidePanel}>
           {finishedGames.length > 0 && (
             <section>
-              <h2 className={styles.sectionTitle}>Recent Games</h2>
+              <h2 className={styles.sectionTitle}>5 Most Recent Games</h2>
               {finishedGames.map(g => (
                 <div key={g.id} className={styles.gameCard} onClick={() => navigate(`/game/${g.id}`)}>
                   <div className={styles.gameInfo}>
