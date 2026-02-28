@@ -5,7 +5,20 @@ import { Lobby } from './pages/Lobby.js';
 import { Game } from './pages/Game.js';
 
 export function App() {
-  const { user, loading, loginWithPassword, registerWithPassword, loginWithPasskey, registerWithPasskey, logout, deleteAccount, refreshUser } = useAuth();
+  const { user, loading, loginWithPassword, registerWithPassword, loginWithPasskey, registerWithPasskey, logout, changePassword, deleteAccount, refreshUser } = useAuth();
+
+  const handleChangePassword = async () => {
+    const currentPassword = prompt('Enter current password:');
+    if (!currentPassword) return;
+    const newPassword = prompt('Enter new password (min 8 characters):');
+    if (!newPassword) return;
+    try {
+      await changePassword(currentPassword, newPassword);
+      alert('Password changed successfully.');
+    } catch (err: any) {
+      alert(err.message || 'Failed to change password.');
+    }
+  };
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -23,6 +36,9 @@ export function App() {
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button onClick={() => { if (confirm('Delete your account? This will permanently remove all your data and game history.')) deleteAccount(); }} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-danger)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '0.875rem' }}>
               Delete Account
+            </button>
+            <button onClick={handleChangePassword} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-text)', fontSize: '0.875rem' }}>
+              Change Password
             </button>
             <button onClick={logout} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-text)' }}>
               Sign Out

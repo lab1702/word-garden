@@ -79,10 +79,17 @@ export function useAuth() {
     setUser(null);
   }, []);
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await apiFetch('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }, []);
+
   const deleteAccount = useCallback(async () => {
     await apiFetch('/auth/account', { method: 'DELETE' });
     setUser(null);
   }, []);
 
-  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout, deleteAccount, refreshUser };
+  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout, changePassword, deleteAccount, refreshUser };
 }

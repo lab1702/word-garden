@@ -317,6 +317,47 @@ router.post('/login/passkey/verify', async (req, res) => {
   }
 });
 
+// PUT /auth/password
+router.put('/password', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: 'Current and new password required' });
+      return;
+    }
+    if (newPassword.length < 8 || newPassword.length > 72) {
+      res.status(400).json({ error: 'New password must be between 8 and 72 characters' });
+      return;
+    }
+
+    const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const user = result.rows[0];
+    if (!user.password_hash) {
+      res.status(400).json({ error: 'Account uses passkey authentication' });
+      return;
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!valid) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    const hash = await bcrypt.hash(newPassword, 12);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 // DELETE /auth/account
 router.delete('/account', requireAuth, async (req, res) => {
   try {
