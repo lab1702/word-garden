@@ -79,7 +79,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
         <Rack
           tiles={rack}
           selectedIndex={exchangeMode ? null : selectedTileIndex}
-          onSelect={exchangeMode ? toggleExchangeTile : setSelectedTileIndex}
+          onSelect={exchangeMode ? toggleExchangeTile : (i) => setSelectedTileIndex(prev => prev === i ? null : i)}
           onShuffle={shuffleRack}
           exchangeMode={exchangeMode}
           exchangeSelection={exchangeSelection}
