@@ -134,6 +134,28 @@ router.delete('/matchmake', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// DELETE /games/:id — cancel a waiting game
+router.delete('/:id', requireAuth, async (req, res) => {
+  const gameId = req.params.id as string;
+  if (!UUID_RE.test(gameId)) {
+    res.status(400).json({ error: 'Invalid game ID' });
+    return;
+  }
+  const userId = req.user!.userId;
+
+  const result = await pool.query(
+    `DELETE FROM games WHERE id = $1 AND player1_id = $2 AND status = 'waiting' RETURNING id`,
+    [gameId, userId],
+  );
+
+  if (result.rowCount === 0) {
+    res.status(404).json({ error: 'Game not found or already started' });
+    return;
+  }
+
+  res.json({ ok: true });
+});
+
 // GET /games — list active/recent games
 router.get('/', requireAuth, async (req, res) => {
   const userId = req.user!.userId;

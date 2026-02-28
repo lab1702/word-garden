@@ -118,6 +118,17 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
     }
   };
 
+  const cancelGame = async (gameId: string) => {
+    setError('');
+    try {
+      await apiFetch(`/games/${gameId}`, { method: 'DELETE' });
+      setInviteCode('');
+      loadGames();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const activeGames = games.filter(g => g.status === 'active');
   const waitingGames = games.filter(g => g.status === 'waiting');
   const finishedGames = games.filter(g => g.status === 'finished').slice(0, 5);
@@ -183,6 +194,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
               {waitingGames.map(g => (
                 <div key={g.id} className={styles.gameCard}>
                   <span>Invite: {g.inviteCode}</span>
+                  <button onClick={() => cancelGame(g.id)} className={styles.cancelGameButton}>Cancel</button>
                 </div>
               ))}
             </section>
