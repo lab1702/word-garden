@@ -1,12 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import { runMigrations } from './db/migrate.js';
 import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
 import { addClient } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const clientDist = join(__dirname, '../../client/dist');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +38,16 @@ app.get('/api/events', requireAuth, (req, res) => {
   res.write('event: connected\ndata: {}\n\n');
   addClient(req.user!.userId, res);
 });
+
+// Serve static client assets in production
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback — serve index.html for non-API routes
+  app.get('{*path}', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(join(clientDist, 'index.html'));
+  });
+}
 
 async function start() {
   await runMigrations();
