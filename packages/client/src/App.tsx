@@ -5,12 +5,12 @@ import { Lobby } from './pages/Lobby.js';
 import { Game } from './pages/Game.js';
 
 export function App() {
-  const { user, loading, loginWithPassword, registerWithPassword, logout } = useAuth();
+  const { user, loading, loginWithPassword, registerWithPassword, loginWithPasskey, registerWithPasskey, logout } = useAuth();
 
   if (loading) return <div className="loading">Loading...</div>;
 
   if (!user) {
-    return <Login onLogin={loginWithPassword} onRegister={registerWithPassword} />;
+    return <Login onLogin={loginWithPassword} onRegister={registerWithPassword} onLoginPasskey={loginWithPasskey} onRegisterPasskey={registerWithPasskey} />;
   }
 
   return (

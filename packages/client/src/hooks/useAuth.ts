@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { apiFetch } from '../api.js';
 
 interface User {
@@ -36,10 +37,38 @@ export function useAuth() {
     return user;
   }, []);
 
+  const registerWithPasskey = useCallback(async (username: string) => {
+    const options = await apiFetch<any>('/auth/register/passkey/options', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    });
+    const credential = await startRegistration({ optionsJSON: options });
+    const user = await apiFetch<User>('/auth/register/passkey/verify', {
+      method: 'POST',
+      body: JSON.stringify({ username, credential }),
+    });
+    setUser(user);
+    return user;
+  }, []);
+
+  const loginWithPasskey = useCallback(async (username: string) => {
+    const options = await apiFetch<any>('/auth/login/passkey/options', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    });
+    const credential = await startAuthentication({ optionsJSON: options });
+    const user = await apiFetch<User>('/auth/login/passkey/verify', {
+      method: 'POST',
+      body: JSON.stringify({ username, credential }),
+    });
+    setUser(user);
+    return user;
+  }, []);
+
   const logout = useCallback(async () => {
     await apiFetch('/auth/logout', { method: 'POST' });
     setUser(null);
   }, []);
 
-  return { user, loading, loginWithPassword, registerWithPassword, logout };
+  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout };
 }

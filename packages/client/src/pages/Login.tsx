@@ -4,9 +4,11 @@ import styles from './Login.module.css';
 interface LoginProps {
   onLogin: (username: string, password: string) => Promise<any>;
   onRegister: (username: string, password: string) => Promise<any>;
+  onLoginPasskey: (username: string) => Promise<any>;
+  onRegisterPasskey: (username: string) => Promise<any>;
 }
 
-export function Login({ onLogin, onRegister }: LoginProps) {
+export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,6 +22,22 @@ export function Login({ onLogin, onRegister }: LoginProps) {
         await onLogin(username, password);
       } else {
         await onRegister(username, password);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasskey = async (action: 'login' | 'register') => {
+    setError('');
+    setLoading(true);
+    try {
+      if (action === 'login') {
+        await onLoginPasskey(username);
+      } else {
+        await onRegisterPasskey(username);
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
@@ -76,6 +94,27 @@ export function Login({ onLogin, onRegister }: LoginProps) {
               onClick={() => handleSubmit('register')}
             >
               Create Account
+            </button>
+          </div>
+
+          <div className={styles.divider}><span>or</span></div>
+
+          <div className={styles.buttons}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              disabled={loading || !username}
+              onClick={() => handlePasskey('login')}
+            >
+              Sign in with Passkey
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              disabled={loading || !username}
+              onClick={() => handlePasskey('register')}
+            >
+              Create Account with Passkey
             </button>
           </div>
         </form>

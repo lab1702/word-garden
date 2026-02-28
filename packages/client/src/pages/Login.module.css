@@ -96,3 +96,21 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--color-text, #2C1810);
+  opacity: 0.5;
+  font-size: 0.875rem;
+  font-family: var(--font-main, Georgia, serif);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
