@@ -178,7 +178,8 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
   const userId = req.user!.userId;
   const gameResult = await pool.query(
-    `SELECT g.*, u1.username as player1_username, u2.username as player2_username
+    `SELECT g.*, u1.username as player1_username, u1.rating as player1_rating,
+            u2.username as player2_username, u2.rating as player2_rating
      FROM games g
      JOIN users u1 ON g.player1_id = u1.id
      LEFT JOIN users u2 ON g.player2_id = u2.id
@@ -211,6 +212,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     id: g.id,
     playerNumber: isPlayer1 ? 1 : 2,
     opponentUsername: isPlayer1 ? g.player2_username : g.player1_username,
+    opponentRating: isPlayer1 ? g.player2_rating : g.player1_rating,
     board: g.board_state,
     currentTurn: g.current_turn,
     player1Score: g.player1_score,

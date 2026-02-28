@@ -7,6 +7,7 @@ interface GameData {
   id: string;
   playerNumber: 1 | 2;
   opponentUsername: string;
+  opponentRating: number | null;
   board: BoardCell[][];
   currentTurn: 1 | 2;
   player1Score: number;
