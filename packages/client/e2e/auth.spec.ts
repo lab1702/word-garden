@@ -14,7 +14,7 @@ test('shows error for short password', async ({ page }) => {
   await page.fill('[name="username"]', 'testuser');
   await page.fill('[name="password"]', 'short');
   await page.click('button:has-text("Create Account")');
-  await expect(page.locator('text=Password must be at least 8 characters')).toBeVisible();
+  await expect(page.locator('text=Password must be between 8 and 72 characters')).toBeVisible();
 });
 
 test('can login after registering', async ({ page }) => {

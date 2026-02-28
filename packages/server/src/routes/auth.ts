@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import rateLimit from 'express-rate-limit';
 import {
@@ -28,8 +29,8 @@ const rpName = process.env.RP_NAME || 'Word Garden';
 const rpID = process.env.RP_ID || 'localhost';
 const origin = process.env.ORIGIN || 'http://localhost:5173';
 
-// In-memory challenge store (per-session, short-lived)
-const challenges = new Map<string, string>();
+// In-memory challenge store keyed by random ID to prevent overwrite attacks
+const challenges = new Map<string, { challenge: string; username: string }>();
 const MAX_CHALLENGES = 10000;
 
 // POST /auth/register/password
@@ -108,55 +109,62 @@ router.post('/login/password', async (req, res) => {
 
 // POST /auth/register/passkey/options
 router.post('/register/passkey/options', async (req, res) => {
-  const { username } = req.body;
-  if (!username) {
-    res.status(400).json({ error: 'Username required' });
-    return;
-  }
-  if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-    res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
-    return;
-  }
-  if (containsProfanity(username)) {
-    res.status(400).json({ error: 'Username contains inappropriate language' });
-    return;
-  }
+  try {
+    const { username } = req.body;
+    if (!username) {
+      res.status(400).json({ error: 'Username required' });
+      return;
+    }
+    if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
+      return;
+    }
+    if (containsProfanity(username)) {
+      res.status(400).json({ error: 'Username contains inappropriate language' });
+      return;
+    }
 
-  const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
-  if (existing.rows.length > 0) {
-    res.status(409).json({ error: 'Username already taken' });
-    return;
+    const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+    if (existing.rows.length > 0) {
+      res.status(409).json({ error: 'Username already taken' });
+      return;
+    }
+
+    const options = await generateRegistrationOptions({
+      rpName,
+      rpID,
+      userName: username,
+      attestationType: 'none',
+    });
+
+    if (challenges.size >= MAX_CHALLENGES) {
+      res.status(503).json({ error: 'Too many pending registrations, try again later' });
+      return;
+    }
+    const challengeId = randomUUID();
+    challenges.set(challengeId, { challenge: options.challenge, username });
+    setTimeout(() => challenges.delete(challengeId), 5 * 60 * 1000);
+
+    res.json({ ...options, challengeId });
+  } catch (err) {
+    console.error('Passkey registration options error:', err);
+    res.status(500).json({ error: 'Internal error' });
   }
-
-  const options = await generateRegistrationOptions({
-    rpName,
-    rpID,
-    userName: username,
-    attestationType: 'none',
-  });
-
-  if (challenges.size >= MAX_CHALLENGES) {
-    res.status(503).json({ error: 'Too many pending registrations, try again later' });
-    return;
-  }
-  challenges.set(username, options.challenge);
-  setTimeout(() => challenges.delete(username), 5 * 60 * 1000);
-
-  res.json(options);
 });
 
 // POST /auth/register/passkey/verify
 router.post('/register/passkey/verify', async (req, res) => {
-  const { username, credential } = req.body;
-  if (!username || !credential) {
-    res.status(400).json({ error: 'Username and credential required' });
+  const { username, credential, challengeId } = req.body;
+  if (!username || !credential || !challengeId) {
+    res.status(400).json({ error: 'Username, credential, and challengeId required' });
     return;
   }
-  const expectedChallenge = challenges.get(username);
-  if (!expectedChallenge) {
+  const pending = challenges.get(challengeId);
+  if (!pending || pending.username !== username) {
     res.status(400).json({ error: 'No pending registration' });
     return;
   }
+  const expectedChallenge = pending.challenge;
 
   try {
     const verification = await verifyRegistrationResponse({
@@ -188,7 +196,7 @@ router.post('/register/passkey/verify', async (req, res) => {
       );
       await client.query('COMMIT');
 
-      challenges.delete(username);
+      challenges.delete(challengeId);
       const token = createToken({ userId: user.id, username: user.username });
       res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
       res.json({ id: user.id, username: user.username, rating: user.rating });
@@ -205,51 +213,58 @@ router.post('/register/passkey/verify', async (req, res) => {
 
 // POST /auth/login/passkey/options
 router.post('/login/passkey/options', async (req, res) => {
-  const { username } = req.body;
-  if (!username) {
-    res.status(400).json({ error: 'Username required' });
-    return;
+  try {
+    const { username } = req.body;
+    if (!username) {
+      res.status(400).json({ error: 'Username required' });
+      return;
+    }
+
+    const creds = await pool.query(
+      'SELECT uc.credential_id FROM user_credentials uc JOIN users u ON uc.user_id = u.id WHERE u.username = $1',
+      [username],
+    );
+
+    if (creds.rows.length === 0) {
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
+
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: creds.rows.map((row: { credential_id: string }) => ({
+        id: row.credential_id,
+      })),
+    });
+
+    if (challenges.size >= MAX_CHALLENGES) {
+      res.status(503).json({ error: 'Too many pending logins, try again later' });
+      return;
+    }
+    const challengeId = randomUUID();
+    challenges.set(challengeId, { challenge: options.challenge, username });
+    setTimeout(() => challenges.delete(challengeId), 5 * 60 * 1000);
+
+    res.json({ ...options, challengeId });
+  } catch (err) {
+    console.error('Passkey login options error:', err);
+    res.status(500).json({ error: 'Internal error' });
   }
-
-  const creds = await pool.query(
-    'SELECT uc.credential_id FROM user_credentials uc JOIN users u ON uc.user_id = u.id WHERE u.username = $1',
-    [username],
-  );
-
-  if (creds.rows.length === 0) {
-    res.status(401).json({ error: 'Invalid credentials' });
-    return;
-  }
-
-  const options = await generateAuthenticationOptions({
-    rpID,
-    allowCredentials: creds.rows.map((row: { credential_id: string }) => ({
-      id: row.credential_id,
-    })),
-  });
-
-  if (challenges.size >= MAX_CHALLENGES) {
-    res.status(503).json({ error: 'Too many pending logins, try again later' });
-    return;
-  }
-  challenges.set(`login:${username}`, options.challenge);
-  setTimeout(() => challenges.delete(`login:${username}`), 5 * 60 * 1000);
-
-  res.json(options);
 });
 
 // POST /auth/login/passkey/verify
 router.post('/login/passkey/verify', async (req, res) => {
-  const { username, credential } = req.body;
-  if (!username || !credential) {
-    res.status(400).json({ error: 'Username and credential required' });
+  const { username, credential, challengeId } = req.body;
+  if (!username || !credential || !challengeId) {
+    res.status(400).json({ error: 'Username, credential, and challengeId required' });
     return;
   }
-  const expectedChallenge = challenges.get(`login:${username}`);
-  if (!expectedChallenge) {
+  const pending = challenges.get(challengeId);
+  if (!pending || pending.username !== username) {
     res.status(400).json({ error: 'No pending login' });
     return;
   }
+  const expectedChallenge = pending.challenge;
 
   try {
     const credResult = await pool.query(
@@ -289,7 +304,7 @@ router.post('/login/passkey/verify', async (req, res) => {
       [verification.authenticationInfo.newCounter, stored.id],
     );
 
-    challenges.delete(`login:${username}`);
+    challenges.delete(challengeId);
     const token = createToken({ userId: stored.user_id, username: stored.username });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
     res.json({ id: stored.user_id, username: stored.username, rating: stored.rating });
@@ -300,7 +315,7 @@ router.post('/login/passkey/verify', async (req, res) => {
 
 // POST /auth/logout
 router.post('/logout', (_req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
   res.json({ ok: true });
 });
 

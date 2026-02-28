@@ -132,6 +132,9 @@ export function useGame(gameId: string) {
   }, [game]);
 
   const shuffleRack = useCallback(() => {
+    if (exchangeMode) {
+      setExchangeSelection(new Set());
+    }
     setRack(prev => {
       const shuffled = [...prev];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -140,7 +143,7 @@ export function useGame(gameId: string) {
       }
       return shuffled;
     });
-  }, []);
+  }, [exchangeMode]);
 
   const submitMove = useCallback(async () => {
     if (!game || tentativePlacements.length === 0) return;

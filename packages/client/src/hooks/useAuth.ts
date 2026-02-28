@@ -42,10 +42,11 @@ export function useAuth() {
       method: 'POST',
       body: JSON.stringify({ username }),
     });
-    const credential = await startRegistration({ optionsJSON: options });
+    const { challengeId, ...optionsJSON } = options;
+    const credential = await startRegistration({ optionsJSON });
     const user = await apiFetch<User>('/auth/register/passkey/verify', {
       method: 'POST',
-      body: JSON.stringify({ username, credential }),
+      body: JSON.stringify({ username, credential, challengeId }),
     });
     setUser(user);
     return user;
@@ -56,10 +57,11 @@ export function useAuth() {
       method: 'POST',
       body: JSON.stringify({ username }),
     });
-    const credential = await startAuthentication({ optionsJSON: options });
+    const { challengeId, ...optionsJSON } = options;
+    const credential = await startAuthentication({ optionsJSON });
     const user = await apiFetch<User>('/auth/login/passkey/verify', {
       method: 'POST',
-      body: JSON.stringify({ username, credential }),
+      body: JSON.stringify({ username, credential, challengeId }),
     });
     setUser(user);
     return user;

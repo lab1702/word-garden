@@ -1,11 +1,7 @@
 import { Tile } from './Tile.js';
 import styles from './Board.module.css';
-import { TILE_DISTRIBUTION } from '@word-garden/shared';
+import { LETTER_POINTS } from '@word-garden/shared';
 import type { BoardCell, TilePlacement } from '@word-garden/shared';
-
-const LETTER_POINTS = new Map(
-  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
-);
 
 interface BoardProps {
   board: BoardCell[][];

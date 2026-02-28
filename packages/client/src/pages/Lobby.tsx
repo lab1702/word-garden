@@ -45,7 +45,7 @@ export function Lobby({ username, rating }: LobbyProps) {
       setMatchmaking(false);
       navigate(`/game/${data.gameId}`);
     },
-    game_started: (data: { gameId: string }) => {
+    game_started: () => {
       loadGames();
     },
     opponent_moved: () => loadGames(),

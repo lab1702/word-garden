@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import pool from '../db/pool.js';
 import { sendEvent } from './sse.js';
 import { initializeGame, drawTilesForPlayer2 } from './gameEngine.js';
@@ -71,7 +72,7 @@ function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = 'GARDEN-';
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[randomInt(chars.length)];
   }
   return code;
 }

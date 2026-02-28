@@ -7,12 +7,8 @@ import { isValidWord } from '../services/dictionary.js';
 import { enterQueue, leaveQueue, generateInviteCode } from '../services/matchmaking.js';
 import { sendEvent } from '../services/sse.js';
 import { calculateNewRatings } from '../services/glicko2.js';
-import { RACK_SIZE, MAX_CONSECUTIVE_PASSES, TILE_DISTRIBUTION, BOARD_SIZE } from '@word-garden/shared';
+import { RACK_SIZE, MAX_CONSECUTIVE_PASSES, LETTER_POINTS, BOARD_SIZE } from '@word-garden/shared';
 import type { TilePlacement, Tile } from '@word-garden/shared';
-
-const LETTER_POINTS = new Map(
-  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
-);
 
 const router = Router();
 
@@ -27,6 +23,7 @@ const gameLimiter = rateLimit({
 router.use(gameLimiter);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const INVITE_CODE_RE = /^GARDEN-[A-HJ-NP-Z2-9]{6}$/;
 
 // POST /games — create a new game with invite code
 router.post('/', requireAuth, async (req, res) => {
@@ -56,7 +53,11 @@ router.post('/', requireAuth, async (req, res) => {
 // POST /games/join/:inviteCode
 router.post('/join/:inviteCode', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
-  const { inviteCode } = req.params;
+  const inviteCode = req.params.inviteCode as string;
+  if (!INVITE_CODE_RE.test(inviteCode)) {
+    res.status(400).json({ error: 'Invalid invite code format' });
+    return;
+  }
 
   const client = await pool.connect();
   try {
@@ -106,6 +107,10 @@ router.post('/join/:inviteCode', requireAuth, async (req, res) => {
 router.post('/matchmake', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
   const userResult = await pool.query('SELECT rating, rating_deviation FROM users WHERE id = $1', [userId]);
+  if (userResult.rows.length === 0) {
+    res.status(401).json({ error: 'User not found' });
+    return;
+  }
   const user = userResult.rows[0];
 
   const result = await enterQueue(userId, user.rating, user.rating_deviation);
