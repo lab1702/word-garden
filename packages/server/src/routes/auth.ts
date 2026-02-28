@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -12,6 +13,16 @@ import { requireAuth } from '../middleware/auth.js';
 import { containsProfanity } from '../services/profanityFilter.js';
 
 const router = Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+router.use(authLimiter);
 
 const rpName = process.env.RP_NAME || 'Word Garden';
 const rpID = process.env.RP_ID || 'localhost';

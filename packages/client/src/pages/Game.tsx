@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router';
 import { Board } from '../components/Board.js';
 import { Rack } from '../components/Rack.js';
+import { BlankTilePicker } from '../components/BlankTilePicker.js';
 import { useGame } from '../hooks/useGame.js';
 import styles from './Game.module.css';
 
@@ -22,6 +23,9 @@ export function Game() {
     submitMove,
     pass,
     resign,
+    pendingBlankPlacement,
+    confirmBlankTile,
+    cancelBlankTile,
   } = useGame(id!);
 
   if (!game) {
@@ -31,10 +35,6 @@ export function Game() {
   const myScore = game.playerNumber === 1 ? game.player1Score : game.player2Score;
   const opponentScore = game.playerNumber === 1 ? game.player2Score : game.player1Score;
   const isFinished = game.status === 'finished';
-  const didWin = isFinished && game.winnerId !== null && (
-    (game.playerNumber === 1 && game.winnerId === game.id) ||
-    myScore > opponentScore
-  );
 
   return (
     <div className={styles.gamePage}>
@@ -111,6 +111,10 @@ export function Game() {
             Back to Lobby
           </button>
         </div>
+      )}
+
+      {pendingBlankPlacement && (
+        <BlankTilePicker onSelect={confirmBlankTile} onCancel={cancelBlankTile} />
       )}
     </div>
   );

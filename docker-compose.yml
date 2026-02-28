@@ -23,6 +23,7 @@ services:
     ports:
       - "9000:3000"
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgres://wordgarden:wordgarden_dev@db:5432/wordgarden
       SESSION_SECRET: dev-secret-change-in-production
       RP_ID: ${RP_ID:-localhost}

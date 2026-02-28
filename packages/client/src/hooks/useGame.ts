@@ -32,6 +32,7 @@ export function useGame(gameId: string) {
   const [tentativePlacements, setTentativePlacements] = useState<(TilePlacement & { rackIndex: number })[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [pendingBlankPlacement, setPendingBlankPlacement] = useState<{ row: number; col: number; rackIndex: number } | null>(null);
 
   const loadGame = useCallback(async () => {
     try {
@@ -67,15 +68,39 @@ export function useGame(gameId: string) {
     if (tentativePlacements.some(t => t.row === row && t.col === col)) return;
 
     const tile = rack[selectedTileIndex];
+
+    // Blank tile — prompt for letter choice
+    if (tile.letter === '') {
+      setPendingBlankPlacement({ row, col, rackIndex: selectedTileIndex });
+      return;
+    }
+
     setTentativePlacements(prev => [
       ...prev,
-      { row, col, letter: tile.letter, isBlank: tile.letter === '', rackIndex: selectedTileIndex },
+      { row, col, letter: tile.letter, isBlank: false, rackIndex: selectedTileIndex },
     ]);
 
     // Remove from available rack tiles
     setRack(prev => prev.filter((_, i) => i !== selectedTileIndex));
     setSelectedTileIndex(null);
   }, [game, isMyTurn, selectedTileIndex, rack, tentativePlacements]);
+
+  const confirmBlankTile = useCallback((letter: string) => {
+    if (!pendingBlankPlacement) return;
+    const { row, col, rackIndex } = pendingBlankPlacement;
+
+    setTentativePlacements(prev => [
+      ...prev,
+      { row, col, letter, isBlank: true, rackIndex },
+    ]);
+    setRack(prev => prev.filter((_, i) => i !== selectedTileIndex!));
+    setSelectedTileIndex(null);
+    setPendingBlankPlacement(null);
+  }, [pendingBlankPlacement, selectedTileIndex]);
+
+  const cancelBlankTile = useCallback(() => {
+    setPendingBlankPlacement(null);
+  }, []);
 
   const removeTentative = useCallback((row: number, col: number) => {
     const placement = tentativePlacements.find(t => t.row === row && t.col === col);
@@ -192,6 +217,9 @@ export function useGame(gameId: string) {
     isMyTurn,
     error,
     submitting,
+    pendingBlankPlacement,
+    confirmBlankTile,
+    cancelBlankTile,
     onCellClick,
     clearPlacements,
     shuffleRack,
