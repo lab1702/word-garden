@@ -1,0 +1,153 @@
+.lobby {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.actionButton,
+.actionButtonCancel {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: var(--font-main, Georgia, serif);
+  cursor: pointer;
+  min-height: 44px;
+  border: none;
+  font-weight: bold;
+}
+
+.actionButton {
+  background: var(--color-accent, #6B8E23);
+  color: white;
+}
+
+.actionButtonCancel {
+  background: #c75b5b;
+  color: white;
+}
+
+.joinRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.joinInput {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: var(--font-mono, 'Courier New', monospace);
+  letter-spacing: 0.1em;
+}
+
+.joinButton {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-text, #2C1810);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-main, Georgia, serif);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.joinButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inviteBox {
+  background: #e8f0e0;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-family: var(--font-mono, 'Courier New', monospace);
+}
+
+.copyButton {
+  margin-left: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--color-accent, #6B8E23);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.error {
+  color: #c75b5b;
+  text-align: center;
+}
+
+.searching {
+  text-align: center;
+  color: var(--color-accent, #6B8E23);
+  font-style: italic;
+}
+
+.sectionTitle {
+  font-family: var(--font-main, Georgia, serif);
+  color: var(--color-text, #2C1810);
+  font-size: 1.25rem;
+  margin: 1.5rem 0 0.75rem;
+  border-bottom: 2px solid #e0d8cc;
+  padding-bottom: 0.5rem;
+}
+
+.gameCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(44, 24, 16, 0.08);
+}
+
+.gameCard:hover {
+  box-shadow: 0 2px 12px rgba(44, 24, 16, 0.15);
+}
+
+.yourTurn {
+  border-left: 4px solid var(--color-accent, #6B8E23);
+}
+
+.gameInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.opponent {
+  font-weight: bold;
+  color: var(--color-text, #2C1810);
+}
+
+.score {
+  color: #666;
+  font-family: var(--font-mono, 'Courier New', monospace);
+}
+
+.turnIndicator {
+  font-size: 0.875rem;
+  color: var(--color-accent, #6B8E23);
+  font-weight: bold;
+}
+
+.finished {
+  font-size: 0.875rem;
+  color: #888;
+}
