@@ -96,7 +96,7 @@ export async function sweepQueue(): Promise<void> {
         const opponent = matchResult.rows[0];
 
         // Remove both from queue
-        await client.query('DELETE FROM matchmaking_queue WHERE user_id = ANY($1::text[])', [
+        await client.query('DELETE FROM matchmaking_queue WHERE user_id = ANY($1::uuid[])', [
           [entry.user_id, opponent.user_id],
         ]);
 
