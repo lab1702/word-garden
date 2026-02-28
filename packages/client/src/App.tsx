@@ -26,7 +26,7 @@ export function App() {
         </header>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <Routes>
-            <Route path="/" element={<Lobby username={user.username} rating={user.rating} onGameFinished={refreshUser} />} />
+            <Route path="/" element={<Lobby userId={user.id} username={user.username} rating={user.rating} onGameFinished={refreshUser} />} />
             <Route path="/game/:id" element={<Game onGameFinished={refreshUser} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

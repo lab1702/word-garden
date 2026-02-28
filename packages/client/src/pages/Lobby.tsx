@@ -16,19 +16,28 @@ interface GameSummary {
   updatedAt: string;
 }
 
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  rating: number;
+}
+
 interface LobbyProps {
+  userId: string;
   username: string;
   rating: number;
   onGameFinished?: () => void;
 }
 
-export function Lobby({ username, rating, onGameFinished }: LobbyProps) {
+export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameSummary[]>([]);
   const [joinCode, setJoinCode] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [matchmaking, setMatchmaking] = useState(false);
   const [error, setError] = useState('');
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   const loadGames = useCallback(async () => {
     try {
@@ -39,7 +48,16 @@ export function Lobby({ username, rating, onGameFinished }: LobbyProps) {
     }
   }, []);
 
-  useEffect(() => { loadGames(); }, [loadGames]);
+  const loadLeaderboard = useCallback(async () => {
+    try {
+      const data = await apiFetch<LeaderboardEntry[]>('/leaderboard');
+      setLeaderboard(data);
+    } catch (err: any) {
+      console.error('Failed to load leaderboard:', err);
+    }
+  }, []);
+
+  useEffect(() => { loadGames(); loadLeaderboard(); }, [loadGames, loadLeaderboard]);
 
   useSSE({
     match_found: (data: { gameId: string }) => {
@@ -51,6 +69,7 @@ export function Lobby({ username, rating, onGameFinished }: LobbyProps) {
     },
     opponent_moved: () => loadGames(),
     game_finished: () => { loadGames(); onGameFinished?.(); },
+    leaderboard_updated: () => loadLeaderboard(),
   });
 
   const createGame = async () => {
@@ -105,6 +124,24 @@ export function Lobby({ username, rating, onGameFinished }: LobbyProps) {
 
   return (
     <div className={styles.lobby}>
+      {leaderboard.length > 0 && (
+        <section className={styles.leaderboard}>
+          <h2 className={styles.sectionTitle}>Top Players</h2>
+          <ol className={styles.leaderboardList}>
+            {leaderboard.map(entry => (
+              <li
+                key={entry.userId}
+                className={`${styles.leaderboardEntry} ${entry.userId === userId ? styles.leaderboardSelf : ''}`}
+              >
+                <span className={styles.leaderboardRank}>#{entry.rank}</span>
+                <span className={styles.leaderboardName}>{entry.username}</span>
+                <span className={styles.leaderboardRating}>{entry.rating}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       <div className={styles.actions}>
         <button onClick={createGame} className={styles.actionButton}>Create Game</button>
 

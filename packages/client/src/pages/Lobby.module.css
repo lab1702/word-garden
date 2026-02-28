@@ -153,3 +153,47 @@
   font-size: 0.875rem;
   color: var(--color-text-muted);
 }
+
+.leaderboard {
+  margin-bottom: 1.5rem;
+}
+
+.leaderboardList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.leaderboardEntry {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  gap: 0.75rem;
+}
+
+.leaderboardEntry:nth-child(odd) {
+  background: var(--color-surface);
+}
+
+.leaderboardSelf {
+  background: rgba(107, 142, 35, 0.15) !important;
+  font-weight: bold;
+}
+
+.leaderboardRank {
+  font-family: var(--font-mono, 'Courier New', monospace);
+  color: var(--color-text-muted);
+  min-width: 2rem;
+}
+
+.leaderboardName {
+  flex: 1;
+  color: var(--color-text);
+}
+
+.leaderboardRating {
+  font-family: var(--font-mono, 'Courier New', monospace);
+  color: var(--color-text);
+  font-weight: bold;
+}
