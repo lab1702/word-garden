@@ -37,7 +37,8 @@ const origin = process.env.ORIGIN || 'http://localhost:5173';
 
 // In-memory challenge store keyed by random ID to prevent overwrite attacks
 const challenges = new Map<string, { challenge: string; username: string }>();
-const MAX_CHALLENGES = 10000;
+const MAX_CHALLENGES = 1000;
+const CHALLENGE_TTL = 2 * 60 * 1000; // 2 minutes
 
 // POST /auth/register/password
 router.post('/register/password', async (req, res) => {
@@ -149,7 +150,7 @@ router.post('/register/passkey/options', async (req, res) => {
     }
     const challengeId = randomUUID();
     challenges.set(challengeId, { challenge: options.challenge, username });
-    setTimeout(() => challenges.delete(challengeId), 5 * 60 * 1000);
+    setTimeout(() => challenges.delete(challengeId), CHALLENGE_TTL);
 
     res.json({ ...options, challengeId });
   } catch (err) {
@@ -249,7 +250,7 @@ router.post('/login/passkey/options', async (req, res) => {
     }
     const challengeId = randomUUID();
     challenges.set(challengeId, { challenge: options.challenge, username });
-    setTimeout(() => challenges.delete(challengeId), 5 * 60 * 1000);
+    setTimeout(() => challenges.delete(challengeId), CHALLENGE_TTL);
 
     res.json({ ...options, challengeId });
   } catch (err) {

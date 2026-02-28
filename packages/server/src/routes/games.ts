@@ -268,6 +268,11 @@ router.post('/:id/move', requireAuth, async (req, res) => {
     exchangeTiles?: number[]; // indices into rack
   };
 
+  if (!['play', 'pass', 'exchange'].includes(moveType)) {
+    res.status(400).json({ error: 'moveType must be play, pass, or exchange' });
+    return;
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

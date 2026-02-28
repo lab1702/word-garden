@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 
 type EventHandler = (data: any) => void;
 
@@ -6,12 +6,19 @@ export function useSSE(handlers: Record<string, EventHandler>) {
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
 
+  // Resubscribe when the set of event names changes
+  const eventKeys = useMemo(
+    () => Object.keys(handlers).sort().join(','),
+    [Object.keys(handlers).sort().join(',')],
+  );
+
   useEffect(() => {
     const basePath = import.meta.env.VITE_BASE_PATH || '';
     const es = new EventSource(`${basePath}/api/events`, { withCredentials: true } as any);
     let errorCount = 0;
 
-    for (const event of Object.keys(handlersRef.current)) {
+    for (const event of eventKeys.split(',')) {
+      if (!event) continue;
       es.addEventListener(event, (e) => {
         const data = JSON.parse((e as MessageEvent).data);
         handlersRef.current[event]?.(data);
@@ -27,5 +34,5 @@ export function useSSE(handlers: Record<string, EventHandler>) {
     };
 
     return () => es.close();
-  }, []);
+  }, [eventKeys]);
 }
