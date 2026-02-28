@@ -6,7 +6,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { initializeGame, drawTilesForPlayer2, validatePlacement, findFormedWords, scoreMove } from '../services/gameEngine.js';
 import { isValidWord } from '../services/dictionary.js';
 import { enterQueue, leaveQueue, generateInviteCode } from '../services/matchmaking.js';
-import { sendEvent } from '../services/sse.js';
+import { sendEvent, broadcastEvent } from '../services/sse.js';
 import { calculateNewRatings } from '../services/glicko2.js';
 import { RACK_SIZE, MAX_CONSECUTIVE_PASSES, LETTER_POINTS, BOARD_SIZE } from '@word-garden/shared';
 import type { TilePlacement, Tile } from '@word-garden/shared';
@@ -416,6 +416,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
       try { sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id }); }
       catch (e) { console.error('SSE notification failed:', e); }
+      if (gameOver) { try { broadcastEvent('leaderboard_updated', {}); } catch {} }
 
       res.json({
         score: scoreResult.totalScore,
@@ -465,6 +466,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
       try { sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id }); }
       catch (e) { console.error('SSE notification failed:', e); }
+      if (gameOver) { try { broadcastEvent('leaderboard_updated', {}); } catch {} }
       res.json({ gameOver });
       return;
 
@@ -589,6 +591,7 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
     const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
     try { sendEvent(opponentId, 'game_finished', { gameId: g.id }); }
     catch (e) { console.error('SSE notification failed:', e); }
+    try { broadcastEvent('leaderboard_updated', {}); } catch {}
     res.json({ ok: true });
     return;
   } catch (err) {
