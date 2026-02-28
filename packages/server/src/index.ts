@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { join, dirname } from 'node:path';
@@ -48,6 +48,12 @@ if (existsSync(clientDist)) {
     res.sendFile(join(clientDist, 'index.html'));
   });
 }
+
+// Global error handler
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 async function start() {
   await runMigrations();

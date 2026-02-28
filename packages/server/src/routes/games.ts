@@ -423,41 +423,56 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 // POST /games/:id/resign
 router.post('/:id/resign', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
-  const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [req.params.id]);
-
-  if (gameResult.rows.length === 0) {
-    res.status(404).json({ error: 'Game not found' });
-    return;
-  }
-
-  const g = gameResult.rows[0];
-  if (g.status !== 'active') {
-    res.status(400).json({ error: 'Game is not active' });
-    return;
-  }
-
-  const isPlayer1 = g.player1_id === userId;
-  const winnerId = isPlayer1 ? g.player2_id : g.player1_id;
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    const gameResult = await client.query(
+      'SELECT * FROM games WHERE id = $1 FOR UPDATE',
+      [req.params.id],
+    );
+
+    if (gameResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(404).json({ error: 'Game not found' });
+      return;
+    }
+
+    const g = gameResult.rows[0];
+    if (g.status !== 'active') {
+      await client.query('ROLLBACK');
+      res.status(400).json({ error: 'Game is not active' });
+      return;
+    }
+
+    const isPlayer1 = g.player1_id === userId;
+    const isPlayer2 = g.player2_id === userId;
+    if (!isPlayer1 && !isPlayer2) {
+      await client.query('ROLLBACK');
+      res.status(403).json({ error: 'Not a participant' });
+      return;
+    }
+
+    const winnerId = isPlayer1 ? g.player2_id : g.player1_id;
+
     await client.query(
       `UPDATE games SET status = 'finished', winner_id = $1, updated_at = NOW() WHERE id = $2`,
       [winnerId, g.id],
     );
     await updateRatings(client, g.player1_id, g.player2_id, winnerId);
     await client.query('COMMIT');
+
+    const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
+    sendEvent(opponentId, 'game_finished', { gameId: g.id });
+    res.json({ ok: true });
   } catch (err) {
     await client.query('ROLLBACK');
-    throw err;
+    console.error('Resign error:', err);
+    res.status(500).json({ error: 'Internal error' });
   } finally {
     client.release();
   }
-
-  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-  sendEvent(opponentId, 'game_finished', { gameId: g.id });
-  res.json({ ok: true });
 });
 
 async function updateRatings(client: any, player1Id: string, player2Id: string, winnerId: string | null) {
