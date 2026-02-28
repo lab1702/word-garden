@@ -9,6 +9,7 @@ export function useSSE(handlers: Record<string, EventHandler>) {
   useEffect(() => {
     const basePath = import.meta.env.VITE_BASE_PATH || '';
     const es = new EventSource(`${basePath}/api/events`, { withCredentials: true } as any);
+    let errorCount = 0;
 
     for (const event of Object.keys(handlersRef.current)) {
       es.addEventListener(event, (e) => {
@@ -16,6 +17,14 @@ export function useSSE(handlers: Record<string, EventHandler>) {
         handlersRef.current[event]?.(data);
       });
     }
+
+    es.onopen = () => { errorCount = 0; };
+    es.onerror = () => {
+      errorCount++;
+      if (errorCount > 5) {
+        es.close();
+      }
+    };
 
     return () => es.close();
   }, []);

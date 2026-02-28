@@ -19,9 +19,10 @@ interface GameSummary {
 interface LobbyProps {
   username: string;
   rating: number;
+  onGameFinished?: () => void;
 }
 
-export function Lobby({ username, rating }: LobbyProps) {
+export function Lobby({ username, rating, onGameFinished }: LobbyProps) {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameSummary[]>([]);
   const [joinCode, setJoinCode] = useState('');
@@ -49,7 +50,7 @@ export function Lobby({ username, rating }: LobbyProps) {
       loadGames();
     },
     opponent_moved: () => loadGames(),
-    game_finished: () => loadGames(),
+    game_finished: () => { loadGames(); onGameFinished?.(); },
   });
 
   const createGame = async () => {

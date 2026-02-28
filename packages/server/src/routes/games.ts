@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomInt } from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import pool from '../db/pool.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -28,6 +29,16 @@ const INVITE_CODE_RE = /^GARDEN-[A-HJ-NP-Z2-9]{6}$/;
 // POST /games — create a new game with invite code
 router.post('/', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
+
+  const waitingCount = await pool.query(
+    "SELECT COUNT(*) FROM games WHERE player1_id = $1 AND status = 'waiting'",
+    [userId],
+  );
+  if (parseInt(waitingCount.rows[0].count, 10) >= 5) {
+    res.status(400).json({ error: 'Too many waiting games (max 5)' });
+    return;
+  }
+
   const game = initializeGame(userId);
 
   let result;
@@ -487,7 +498,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       // Put returned tiles back in bag and shuffle
       tileBag.push(...returned);
       for (let i = tileBag.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = randomInt(i + 1);
         [tileBag[i], tileBag[j]] = [tileBag[j], tileBag[i]];
       }
 

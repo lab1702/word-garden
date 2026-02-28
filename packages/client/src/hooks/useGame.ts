@@ -25,7 +25,7 @@ interface GameData {
   } | null;
 }
 
-export function useGame(gameId: string) {
+export function useGame(gameId: string, onGameFinished?: () => void) {
   const [game, setGame] = useState<GameData | null>(null);
   const [rack, setRack] = useState<Tile[]>([]);
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null);
@@ -57,7 +57,7 @@ export function useGame(gameId: string) {
       if (data.gameId === gameId) loadGame();
     },
     game_finished: (data: { gameId: string }) => {
-      if (data.gameId === gameId) loadGame();
+      if (data.gameId === gameId) { loadGame(); onGameFinished?.(); }
     },
   });
 

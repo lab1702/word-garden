@@ -1,9 +1,20 @@
+import { randomInt } from 'node:crypto';
 import {
   createEmptyBoard, BOARD_SIZE, CENTER, MAX_CONSECUTIVE_PASSES,
-  createTileBag, shuffleBag, RACK_SIZE, BINGO_BONUS, TILE_DISTRIBUTION,
+  createTileBag, RACK_SIZE, BINGO_BONUS, LETTER_POINTS,
 } from '@word-garden/shared';
 import type { Board, Tile, TilePlacement, CellPremium } from '@word-garden/shared';
 import { isValidWord } from './dictionary.js';
+
+/** Crypto-secure Fisher-Yates shuffle for server-side use */
+function secureShuffleBag(bag: Tile[]): Tile[] {
+  const shuffled = [...bag];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
 interface ValidationResult {
   valid: boolean;
@@ -32,7 +43,7 @@ interface GameInit {
 
 export function initializeGame(player1Id: string): GameInit {
   const board = createEmptyBoard();
-  let tileBag = shuffleBag(createTileBag());
+  let tileBag = secureShuffleBag(createTileBag());
   const player1Rack = tileBag.splice(0, RACK_SIZE);
   return {
     board,
@@ -236,10 +247,6 @@ export function scoreMove(board: Board, tiles: TilePlacement[]): ScoreResult {
 
   return { totalScore, wordScores, bingo };
 }
-
-const LETTER_POINTS = new Map(
-  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
-);
 
 function getLetterPoints(letter: string): number {
   return LETTER_POINTS.get(letter.toUpperCase()) ?? 0;

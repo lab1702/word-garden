@@ -55,14 +55,14 @@ function computeNewVolatility(sigma: number, phi: number, v: number, delta: numb
     B = Math.log(deltaSq - phiSq - v);
   } else {
     let k = 1;
-    while (f(a - k * TAU) < 0) k++;
+    while (f(a - k * TAU) < 0 && k < 100) k++;
     B = a - k * TAU;
   }
 
   let fA = f(A);
   let fB = f(B);
 
-  while (Math.abs(B - A) > EPSILON) {
+  for (let iter = 0; iter < 100 && Math.abs(B - A) > EPSILON; iter++) {
     const C = A + (A - B) * fA / (fB - fA);
     const fC = f(C);
     if (fC * fB <= 0) {

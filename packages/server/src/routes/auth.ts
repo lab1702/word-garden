@@ -23,7 +23,11 @@ const authLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later' },
 });
 
-router.use(authLimiter);
+// Apply rate limiting only to mutation endpoints (exclude GET /me)
+router.use((req, res, next) => {
+  if (req.method === 'GET') return next();
+  return authLimiter(req, res, next);
+});
 
 const rpName = process.env.RP_NAME || 'Word Garden';
 const rpID = process.env.RP_ID || 'localhost';
@@ -160,6 +164,7 @@ router.post('/register/passkey/verify', async (req, res) => {
     return;
   }
   const pending = challenges.get(challengeId);
+  challenges.delete(challengeId); // Delete immediately to prevent replay
   if (!pending || pending.username !== username) {
     res.status(400).json({ error: 'No pending registration' });
     return;
@@ -196,7 +201,6 @@ router.post('/register/passkey/verify', async (req, res) => {
       );
       await client.query('COMMIT');
 
-      challenges.delete(challengeId);
       const token = createToken({ userId: user.id, username: user.username });
       res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
       res.json({ id: user.id, username: user.username, rating: user.rating });
@@ -260,6 +264,7 @@ router.post('/login/passkey/verify', async (req, res) => {
     return;
   }
   const pending = challenges.get(challengeId);
+  challenges.delete(challengeId); // Delete immediately to prevent replay
   if (!pending || pending.username !== username) {
     res.status(400).json({ error: 'No pending login' });
     return;
@@ -304,7 +309,6 @@ router.post('/login/passkey/verify', async (req, res) => {
       [verification.authenticationInfo.newCounter, stored.id],
     );
 
-    challenges.delete(challengeId);
     const token = createToken({ userId: stored.user_id, username: stored.username });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
     res.json({ id: stored.user_id, username: stored.username, rating: stored.rating });

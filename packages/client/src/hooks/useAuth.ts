@@ -67,10 +67,17 @@ export function useAuth() {
     return user;
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const data = await apiFetch<User>('/auth/me');
+      setUser(data);
+    } catch { /* ignore */ }
+  }, []);
+
   const logout = useCallback(async () => {
     await apiFetch('/auth/logout', { method: 'POST' });
     setUser(null);
   }, []);
 
-  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout };
+  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout, refreshUser };
 }

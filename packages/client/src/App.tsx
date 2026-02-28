@@ -5,7 +5,7 @@ import { Lobby } from './pages/Lobby.js';
 import { Game } from './pages/Game.js';
 
 export function App() {
-  const { user, loading, loginWithPassword, registerWithPassword, loginWithPasskey, registerWithPasskey, logout } = useAuth();
+  const { user, loading, loginWithPassword, registerWithPassword, loginWithPasskey, registerWithPasskey, logout, refreshUser } = useAuth();
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -25,8 +25,8 @@ export function App() {
           </button>
         </header>
         <Routes>
-          <Route path="/" element={<Lobby username={user.username} rating={user.rating} />} />
-          <Route path="/game/:id" element={<Game />} />
+          <Route path="/" element={<Lobby username={user.username} rating={user.rating} onGameFinished={refreshUser} />} />
+          <Route path="/game/:id" element={<Game onGameFinished={refreshUser} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

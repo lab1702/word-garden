@@ -16,6 +16,7 @@ services:
       retries: 10
 
   app:
+    restart: unless-stopped
     build:
       context: .
       args:

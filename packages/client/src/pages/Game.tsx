@@ -5,7 +5,7 @@ import { BlankTilePicker } from '../components/BlankTilePicker.js';
 import { useGame } from '../hooks/useGame.js';
 import styles from './Game.module.css';
 
-export function Game() {
+export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
@@ -32,7 +32,7 @@ export function Game() {
     exitExchangeMode,
     toggleExchangeTile,
     submitExchange,
-  } = useGame(id!);
+  } = useGame(id!, onGameFinished);
 
   if (!game) {
     return <div className={styles.loading}>Loading game...</div>;
