@@ -57,7 +57,7 @@
 
 .actionButton {
   background: var(--color-accent, #6B8E23);
-  color: white;
+  color: #111;
 }
 
 .actionButtonCancel {
@@ -85,7 +85,7 @@
 .joinButton {
   padding: 0.75rem 1.5rem;
   background: var(--color-accent, #6B8E23);
-  color: #fff;
+  color: #111;
   border: none;
   border-radius: 8px;
   font-family: var(--font-main, Georgia, serif);
@@ -115,7 +115,7 @@
   margin-left: 0.75rem;
   padding: 0.25rem 0.75rem;
   background: var(--color-accent, #6B8E23);
-  color: white;
+  color: #111;
   border: none;
   border-radius: 4px;
   cursor: pointer;
