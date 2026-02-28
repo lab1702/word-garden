@@ -41,10 +41,14 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
   } = useGame(id!, onGameFinished);
 
   const handleRackDropOutside = useCallback((rackIndex: number, clientX: number, clientY: number) => {
-    const el = document.elementFromPoint(clientX, clientY)?.closest('[data-row]') as HTMLElement | null;
+    // The dragged tile is visually at the pointer position (z-index: 10),
+    // so elementFromPoint returns it instead of the board cell underneath.
+    // Use elementsFromPoint to look through all layers.
+    const elements = document.elementsFromPoint(clientX, clientY);
+    const el = elements.find(e => e instanceof HTMLElement && e.dataset.row !== undefined) as HTMLElement | undefined;
     if (!el) return;
-    const row = parseInt(el.getAttribute('data-row')!, 10);
-    const col = parseInt(el.getAttribute('data-col')!, 10);
+    const row = parseInt(el.dataset.row!, 10);
+    const col = parseInt(el.dataset.col!, 10);
     if (isNaN(row) || isNaN(col)) return;
     placeTileFromRack(row, col, rackIndex);
   }, [placeTileFromRack]);
