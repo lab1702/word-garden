@@ -9,6 +9,7 @@ import pool from './db/pool.js';
 import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
+import leaderboardRouter from './routes/leaderboard.js';
 import { addClient } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
 
@@ -28,6 +29,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/games', gameRouter);
+app.use('/api/leaderboard', leaderboardRouter);
 
 // SSE endpoint
 app.get('/api/events', requireAuth, (req, res) => {
