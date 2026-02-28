@@ -12,11 +12,25 @@
   background: var(--color-board, #8B7355);
   padding: 6px;
   border-radius: 6px;
+  touch-action: none;
 }
 
 .rackSlot {
   width: clamp(36px, 8vw, 52px);
   height: clamp(36px, 8vw, 52px);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.dragging {
+  opacity: 0.4;
+  transform: scale(0.9);
+}
+
+.dropTarget {
+  transform: scale(1.08);
+  outline: 2px dashed #4a90d9;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .shuffleButton {

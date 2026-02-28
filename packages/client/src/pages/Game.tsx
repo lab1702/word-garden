@@ -20,6 +20,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
     onCellClick,
     clearPlacements,
     shuffleRack,
+    reorderRack,
     submitMove,
     pass,
     resign,
@@ -81,6 +82,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
           selectedIndex={exchangeMode ? null : selectedTileIndex}
           onSelect={exchangeMode ? toggleExchangeTile : (i) => setSelectedTileIndex(prev => prev === i ? null : i)}
           onShuffle={shuffleRack}
+          onReorder={reorderRack}
           exchangeMode={exchangeMode}
           exchangeSelection={exchangeSelection}
         />

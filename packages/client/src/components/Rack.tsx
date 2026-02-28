@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { Tile } from './Tile.js';
+import { useRackDrag } from '../hooks/useRackDrag.js';
 import styles from './Rack.module.css';
 import type { Tile as TileType } from '@word-garden/shared';
 
@@ -7,24 +9,52 @@ interface RackProps {
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onShuffle: () => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
   exchangeMode?: boolean;
   exchangeSelection?: Set<number>;
 }
 
-export function Rack({ tiles, selectedIndex, onSelect, onShuffle, exchangeMode, exchangeSelection }: RackProps) {
+export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection }: RackProps) {
+  const { dragState, suppressClickRef, setSlotRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useRackDrag({
+    onReorder,
+    disabled: exchangeMode,
+  });
+
+  const handleClick = useCallback((index: number) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    onSelect(index);
+  }, [onSelect, suppressClickRef]);
+
   return (
     <div className={styles.rackContainer}>
       <div className={styles.rack}>
-        {tiles.map((tile, i) => (
-          <div key={i} className={styles.rackSlot}>
-            <Tile
-              letter={tile.letter}
-              points={tile.points}
-              selected={exchangeMode ? exchangeSelection?.has(i) : selectedIndex === i}
-              onClick={() => onSelect(i)}
-            />
-          </div>
-        ))}
+        {tiles.map((tile, i) => {
+          const isDragging = dragState.dragIndex === i;
+          const isDropTarget = dragState.dragIndex !== null && dragState.overIndex === i && dragState.dragIndex !== i;
+          const slotClass = `${styles.rackSlot}${isDragging ? ` ${styles.dragging}` : ''}${isDropTarget ? ` ${styles.dropTarget}` : ''}`;
+
+          return (
+            <div
+              key={i}
+              ref={(el) => setSlotRef(i, el)}
+              className={slotClass}
+              onPointerDown={(e) => onPointerDown(e, i)}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
+            >
+              <Tile
+                letter={tile.letter}
+                points={tile.points}
+                selected={exchangeMode ? exchangeSelection?.has(i) : selectedIndex === i}
+                onClick={() => handleClick(i)}
+              />
+            </div>
+          );
+        })}
       </div>
       <button onClick={onShuffle} className={styles.shuffleButton} title="Shuffle tiles">
         Shuffle

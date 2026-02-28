@@ -132,6 +132,17 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     setSelectedTileIndex(null);
   }, [game]);
 
+  const reorderRack = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setRack(prev => {
+      const next = [...prev];
+      const [tile] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, tile);
+      return next;
+    });
+    setSelectedTileIndex(null);
+  }, []);
+
   const shuffleRack = useCallback(() => {
     if (exchangeMode) {
       setExchangeSelection(new Set());
@@ -256,6 +267,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     onCellClick,
     clearPlacements,
     shuffleRack,
+    reorderRack,
     submitMove,
     pass,
     exchangeMode,
