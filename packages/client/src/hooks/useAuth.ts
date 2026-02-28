@@ -79,5 +79,10 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout, refreshUser };
+  const deleteAccount = useCallback(async () => {
+    await apiFetch('/auth/account', { method: 'DELETE' });
+    setUser(null);
+  }, []);
+
+  return { user, loading, loginWithPassword, registerWithPassword, registerWithPasskey, loginWithPasskey, logout, deleteAccount, refreshUser };
 }

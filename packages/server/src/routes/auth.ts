@@ -317,6 +317,23 @@ router.post('/login/passkey/verify', async (req, res) => {
   }
 });
 
+// DELETE /auth/account
+router.delete('/account', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 // POST /auth/logout
 router.post('/logout', (_req, res) => {
   res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
