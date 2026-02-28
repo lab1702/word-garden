@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, type CSSProperties } from 'react';
 
 interface DragState {
   dragIndex: number | null;
@@ -12,6 +12,9 @@ interface UseRackDragOptions {
 
 export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
   const [dragState, setDragState] = useState<DragState>({ dragIndex: null, overIndex: null });
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [dropping, setDropping] = useState(false);
+  const [dropTarget, setDropTarget] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
 
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -34,6 +37,9 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
 
   const cleanup = useCallback(() => {
     setDragState({ dragIndex: null, overIndex: null });
+    setDragOffset(null);
+    setDropping(false);
+    setDropTarget(null);
     startPosRef.current = null;
     didDragRef.current = false;
     dragIndexRef.current = null;
@@ -49,7 +55,6 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     didDragRef.current = false;
     suppressClickRef.current = false;
 
-    // Cache slot rects
     rectsRef.current = slotRefs.current.map(el => el?.getBoundingClientRect() ?? new DOMRect());
 
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -68,6 +73,8 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
       setDragState({ dragIndex: dragIndexRef.current, overIndex: dragIndexRef.current });
     }
 
+    setDragOffset({ x: dx, y: dy });
+
     const hit = hitTest(e.clientX, e.clientY);
     if (hit !== null && hit !== overIndexRef.current) {
       overIndexRef.current = hit;
@@ -79,10 +86,26 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     if (dragIndexRef.current === null) return;
 
     if (didDragRef.current && overIndexRef.current !== null && dragIndexRef.current !== overIndexRef.current) {
-      onReorder(dragIndexRef.current, overIndexRef.current);
-    }
+      // Compute drop animation target: distance from current drag position to the target slot
+      const rects = rectsRef.current;
+      const fromRect = rects[dragIndexRef.current];
+      const toRect = rects[overIndexRef.current];
+      const targetX = toRect.left - fromRect.left;
+      const targetY = toRect.top - fromRect.top;
 
-    cleanup();
+      const savedDragIndex = dragIndexRef.current;
+      const savedOverIndex = overIndexRef.current;
+
+      setDropping(true);
+      setDropTarget({ x: targetX, y: targetY });
+
+      setTimeout(() => {
+        onReorder(savedDragIndex, savedOverIndex);
+        cleanup();
+      }, 150);
+    } else {
+      cleanup();
+    }
   }, [onReorder, cleanup]);
 
   const onPointerCancel = useCallback(() => {
@@ -93,6 +116,57 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     slotRefs.current[index] = el;
   }, []);
 
+  const getSlotStyle = useCallback((index: number): CSSProperties => {
+    const { dragIndex, overIndex } = dragState;
+    if (dragIndex === null || overIndex === null) return {};
+
+    // The dragged tile follows the pointer (or animates to drop target)
+    if (index === dragIndex) {
+      if (dropping && dropTarget) {
+        return {
+          transform: `translate(${dropTarget.x}px, ${dropTarget.y}px) scale(1.05)`,
+          transition: 'transform 0.15s ease',
+          zIndex: 10,
+          position: 'relative',
+        };
+      }
+      if (dragOffset) {
+        return {
+          transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) scale(1.05)`,
+          transition: 'none',
+          zIndex: 10,
+          position: 'relative',
+        };
+      }
+      return {};
+    }
+
+    // Other tiles slide to preview the reordered arrangement
+    const rects = rectsRef.current;
+    if (rects.length === 0) return {};
+    const slotWidth = rects[0].width + 4; // tile width + gap
+
+    let shift = 0;
+    if (dragIndex < overIndex) {
+      // Dragging right: tiles between dragIndex+1..overIndex shift left
+      if (index > dragIndex && index <= overIndex) {
+        shift = -slotWidth;
+      }
+    } else if (dragIndex > overIndex) {
+      // Dragging left: tiles between overIndex..dragIndex-1 shift right
+      if (index >= overIndex && index < dragIndex) {
+        shift = slotWidth;
+      }
+    }
+
+    if (shift === 0) return {};
+
+    return {
+      transform: `translateX(${shift}px)`,
+      transition: 'transform 0.15s ease',
+    };
+  }, [dragState, dragOffset, dropping, dropTarget]);
+
   return {
     dragState,
     suppressClickRef,
@@ -101,5 +175,6 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     onPointerMove,
     onPointerUp,
     onPointerCancel,
+    getSlotStyle,
   };
 }
