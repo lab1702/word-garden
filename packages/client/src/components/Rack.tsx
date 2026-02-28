@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Tile } from './Tile.js';
 import { useRackDrag } from '../hooks/useRackDrag.js';
+import { useTileDrag } from '../context/TileDragContext.js';
 import styles from './Rack.module.css';
 import type { Tile as TileType } from '@word-garden/shared';
 
@@ -15,9 +16,17 @@ interface RackProps {
 }
 
 export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection }: RackProps) {
+  const { dragState: tileDragState, startDrag, endDrag } = useTileDrag();
+
+  const handleDragStart = useCallback((index: number) => {
+    startDrag({ tile: tiles[index], source: { type: 'rack', index } });
+  }, [tiles, startDrag]);
+
   const { dragState, suppressClickRef, setSlotRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, getSlotStyle } = useRackDrag({
     onReorder,
     disabled: exchangeMode,
+    onDragStart: handleDragStart,
+    onDragEnd: endDrag,
   });
 
   const handleClick = useCallback((index: number) => {
@@ -28,9 +37,11 @@ export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exc
     onSelect(index);
   }, [onSelect, suppressClickRef]);
 
+  const isRackDropTarget = tileDragState?.source.type === 'board';
+
   return (
     <div className={styles.rackContainer}>
-      <div className={styles.rack}>
+      <div className={`${styles.rack}${isRackDropTarget ? ` ${styles.rackDropTarget}` : ''}`}>
         {tiles.map((tile, i) => {
           const isDragging = dragState.dragIndex === i;
           const slotClass = `${styles.rackSlot}${isDragging ? ` ${styles.lifting}` : ''}`;
