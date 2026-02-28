@@ -7,7 +7,8 @@ export function useSSE(handlers: Record<string, EventHandler>) {
   handlersRef.current = handlers;
 
   useEffect(() => {
-    const es = new EventSource('/api/events', { withCredentials: true } as any);
+    const basePath = import.meta.env.VITE_BASE_PATH || '';
+    const es = new EventSource(`${basePath}/api/events`, { withCredentials: true } as any);
 
     for (const event of Object.keys(handlersRef.current)) {
       es.addEventListener(event, (e) => {

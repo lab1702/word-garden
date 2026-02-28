@@ -14,7 +14,7 @@ export function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.VITE_BASE_PATH || '/'}>
       <div>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '2px solid var(--color-border)' }}>
           <span style={{ fontFamily: 'Georgia, serif', fontWeight: 'bold', color: 'var(--color-text)' }}>
