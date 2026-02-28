@@ -9,9 +9,11 @@ import {
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import pool from '../db/pool.js';
-import { createToken } from '../services/session.js';
+import { createToken, verifyToken } from '../services/session.js';
 import { requireAuth } from '../middleware/auth.js';
 import { containsProfanity } from '../services/profanityFilter.js';
+import { sendEvent, broadcastEvent, disconnectUser } from '../services/sse.js';
+import { calculateNewRatings } from '../services/glicko2.js';
 
 const router = Router();
 
@@ -60,11 +62,11 @@ router.post('/register/password', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, rating',
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, rating, token_version',
       [username, hash],
     );
     const user = result.rows[0];
-    const token = createToken({ userId: user.id, username: user.username });
+    const token = createToken({ userId: user.id, username: user.username, tokenVersion: user.token_version });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
     res.json({ id: user.id, username: user.username, rating: user.rating });
   } catch (err: any) {
@@ -85,7 +87,7 @@ router.post('/login/password', async (req, res) => {
       return;
     }
 
-    const result = await pool.query('SELECT id, username, password_hash, rating FROM users WHERE username = $1', [username]);
+    const result = await pool.query('SELECT id, username, password_hash, rating, token_version FROM users WHERE username = $1', [username]);
     if (result.rows.length === 0) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
@@ -102,7 +104,7 @@ router.post('/login/password', async (req, res) => {
       return;
     }
 
-    const token = createToken({ userId: user.id, username: user.username });
+    const token = createToken({ userId: user.id, username: user.username, tokenVersion: user.token_version });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
     res.json({ id: user.id, username: user.username, rating: user.rating });
   } catch (err) {
@@ -190,7 +192,7 @@ router.post('/register/passkey/verify', async (req, res) => {
     try {
       await client.query('BEGIN');
       const userResult = await client.query(
-        'INSERT INTO users (username) VALUES ($1) RETURNING id, username, rating',
+        'INSERT INTO users (username) VALUES ($1) RETURNING id, username, rating, token_version',
         [username],
       );
       const user = userResult.rows[0];
@@ -201,7 +203,7 @@ router.post('/register/passkey/verify', async (req, res) => {
       );
       await client.query('COMMIT');
 
-      const token = createToken({ userId: user.id, username: user.username });
+      const token = createToken({ userId: user.id, username: user.username, tokenVersion: user.token_version });
       res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
       res.json({ id: user.id, username: user.username, rating: user.rating });
     } catch (innerErr) {
@@ -273,7 +275,7 @@ router.post('/login/passkey/verify', async (req, res) => {
 
   try {
     const credResult = await pool.query(
-      `SELECT uc.id, uc.credential_id, uc.public_key, uc.counter, u.id as user_id, u.username, u.rating
+      `SELECT uc.id, uc.credential_id, uc.public_key, uc.counter, u.id as user_id, u.username, u.rating, u.token_version
        FROM user_credentials uc JOIN users u ON uc.user_id = u.id
        WHERE u.username = $1 AND uc.credential_id = $2`,
       [username, credential.id],
@@ -309,7 +311,7 @@ router.post('/login/passkey/verify', async (req, res) => {
       [verification.authenticationInfo.newCounter, stored.id],
     );
 
-    const token = createToken({ userId: stored.user_id, username: stored.username });
+    const token = createToken({ userId: stored.user_id, username: stored.username, tokenVersion: stored.token_version });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
     res.json({ id: stored.user_id, username: stored.username, rating: stored.rating });
   } catch (err) {
@@ -350,7 +352,19 @@ router.put('/password', requireAuth, async (req, res) => {
     }
 
     const hash = await bcrypt.hash(newPassword, 12);
-    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]);
+    const updated = await pool.query(
+      'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2 RETURNING token_version',
+      [hash, userId],
+    );
+    const newVersion = updated.rows[0].token_version;
+
+    // Issue a fresh token so the current session stays valid
+    const token = createToken({ userId, username: req.user!.username, tokenVersion: newVersion });
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+
+    // Disconnect any existing SSE connections (they hold stale tokens)
+    disconnectUser(userId);
+
     res.json({ ok: true });
   } catch (err) {
     console.error('Change password error:', err);
@@ -360,23 +374,86 @@ router.put('/password', requireAuth, async (req, res) => {
 
 // DELETE /auth/account
 router.delete('/account', requireAuth, async (req, res) => {
+  const client = await pool.connect();
   try {
     const userId = req.user!.userId;
-    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
+    await client.query('BEGIN');
+
+    // Forfeit all active games so opponents get a proper win + rating update
+    const activeGames = await client.query(
+      `SELECT * FROM games WHERE status = 'active' AND (player1_id = $1 OR player2_id = $1) FOR UPDATE`,
+      [userId],
+    );
+
+    for (const g of activeGames.rows) {
+      const isPlayer1 = g.player1_id === userId;
+      const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
+      const winnerId = opponentId;
+
+      await client.query(
+        `UPDATE games SET status = 'finished', winner_id = $1, updated_at = NOW() WHERE id = $2`,
+        [winnerId, g.id],
+      );
+
+      // Update ratings — lock user rows in consistent order to prevent deadlocks
+      const [firstId, secondId] = g.player1_id < g.player2_id ? [g.player1_id, g.player2_id] : [g.player2_id, g.player1_id];
+      const first = await client.query('SELECT id, rating, rating_deviation, rating_volatility FROM users WHERE id = $1 FOR UPDATE', [firstId]);
+      const second = await client.query('SELECT id, rating, rating_deviation, rating_volatility FROM users WHERE id = $1 FOR UPDATE', [secondId]);
+
+      const p1Data = first.rows[0].id === g.player1_id ? first.rows[0] : second.rows[0];
+      const p2Data = first.rows[0].id === g.player1_id ? second.rows[0] : first.rows[0];
+      const outcome = winnerId === g.player1_id ? 1 : winnerId === g.player2_id ? -1 : 0;
+      const newRatings = calculateNewRatings(
+        { rating: p1Data.rating, deviation: p1Data.rating_deviation, volatility: p1Data.rating_volatility },
+        { rating: p2Data.rating, deviation: p2Data.rating_deviation, volatility: p2Data.rating_volatility },
+        outcome as 1 | 0 | -1,
+      );
+
+      await client.query(
+        'UPDATE users SET rating = $1, rating_deviation = $2, rating_volatility = $3 WHERE id = $4',
+        [newRatings.player1.rating, newRatings.player1.deviation, newRatings.player1.volatility, g.player1_id],
+      );
+      await client.query(
+        'UPDATE users SET rating = $1, rating_deviation = $2, rating_volatility = $3 WHERE id = $4',
+        [newRatings.player2.rating, newRatings.player2.deviation, newRatings.player2.volatility, g.player2_id],
+      );
+
+      // Notify opponent
+      try { sendEvent(opponentId, 'game_finished', { gameId: g.id }); } catch {}
+    }
+
+    if (activeGames.rows.length > 0) {
+      try { broadcastEvent('leaderboard_updated', {}); } catch {}
+    }
+
+    // Now delete the user (CASCADE handles remaining games/moves/credentials/queue)
+    const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
     if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
       res.status(404).json({ error: 'User not found' });
       return;
     }
+
+    await client.query('COMMIT');
+
+    disconnectUser(userId);
     res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     res.json({ ok: true });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Delete account error:', err);
     res.status(500).json({ error: 'Internal error' });
+  } finally {
+    client.release();
   }
 });
 
 // POST /auth/logout
-router.post('/logout', (_req, res) => {
+router.post('/logout', (req, res) => {
+  // Best-effort SSE disconnect if token is valid
+  const payload = req.cookies?.token ? verifyToken(req.cookies.token) : null;
+  if (payload) disconnectUser(payload.userId);
+
   res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
   res.json({ ok: true });
 });

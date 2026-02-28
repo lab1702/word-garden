@@ -31,6 +31,15 @@ export function sendEvent(userId: string, event: string, data: unknown): void {
   }
 }
 
+export function disconnectUser(userId: string): void {
+  const userClients = clients.get(userId);
+  if (!userClients) return;
+  for (const res of [...userClients]) {
+    try { res.end(); } catch { /* already closed */ }
+  }
+  clients.delete(userId);
+}
+
 export function broadcastEvent(event: string, data: unknown): void {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const [userId, userClients] of clients) {

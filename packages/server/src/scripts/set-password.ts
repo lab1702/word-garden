@@ -21,7 +21,7 @@ const pool = new pg.Pool({
 try {
   const hash = await bcrypt.hash(password, 12);
   const result = await pool.query(
-    'UPDATE users SET password_hash = $1 WHERE username = $2 RETURNING id, username',
+    'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE username = $2 RETURNING id, username',
     [hash, username],
   );
 

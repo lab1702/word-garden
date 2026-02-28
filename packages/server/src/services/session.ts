@@ -18,6 +18,7 @@ const EXPIRY = '30d';
 export interface SessionPayload {
   userId: string;
   username: string;
+  tokenVersion: number;
 }
 
 export function createToken(payload: SessionPayload): string {
