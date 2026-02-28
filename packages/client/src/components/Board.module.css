@@ -1,0 +1,55 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  gap: 1px;
+  background: var(--color-board, #8B7355);
+  padding: 4px;
+  border-radius: 6px;
+  aspect-ratio: 1;
+  max-width: min(90vw, 560px);
+  margin: 0 auto;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e0d0;
+  aspect-ratio: 1;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+
+.cell:hover {
+  background: #d8d0c0;
+}
+
+.premiumDW {
+  background: var(--color-premium-dw, #E8B4B8);
+}
+
+.premiumTW {
+  background: var(--color-premium-tw, #C75B5B);
+}
+
+.premiumDL {
+  background: var(--color-premium-dl, #B8D4E8);
+}
+
+.premiumTL {
+  background: var(--color-premium-tl, #5B8CC7);
+}
+
+.premiumLabel {
+  font-size: clamp(0.35rem, 1.3vw, 0.6rem);
+  font-weight: bold;
+  color: rgba(44, 24, 16, 0.5);
+  font-family: var(--font-mono, 'Courier New', monospace);
+  line-height: 1;
+}
+
+.lastMove {
+  box-shadow: inset 0 0 0 2px rgba(107, 142, 35, 0.5);
+}

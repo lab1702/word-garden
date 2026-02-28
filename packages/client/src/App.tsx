@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { useAuth } from './hooks/useAuth.js';
 import { Login } from './pages/Login.js';
 import { Lobby } from './pages/Lobby.js';
+import { Game } from './pages/Game.js';
 
 export function App() {
   const { user, loading, loginWithPassword, registerWithPassword, logout } = useAuth();
@@ -25,6 +26,7 @@ export function App() {
         </header>
         <Routes>
           <Route path="/" element={<Lobby username={user.username} rating={user.rating} />} />
+          <Route path="/game/:id" element={<Game />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

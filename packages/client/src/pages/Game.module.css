@@ -1,0 +1,151 @@
+.gamePage {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0.5rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text, #2C1810);
+}
+
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.playerScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.activePlayer {
+  background: rgba(107, 142, 35, 0.1);
+}
+
+.playerLabel {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.scoreValue {
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-family: var(--font-mono, 'Courier New', monospace);
+  color: var(--color-text, #2C1810);
+}
+
+.gameStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.yourTurn {
+  color: var(--color-accent, #6B8E23);
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+.waiting {
+  color: #888;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+.finished {
+  color: var(--color-text, #2C1810);
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+.tilesLeft {
+  font-size: 0.7rem;
+  color: #aaa;
+}
+
+.error {
+  color: #c75b5b;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.playButton {
+  padding: 0.75rem 2rem;
+  background: var(--color-accent, #6B8E23);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-main, Georgia, serif);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.playButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.secondaryAction {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: var(--font-main, Georgia, serif);
+  cursor: pointer;
+  color: var(--color-text, #2C1810);
+  min-height: 44px;
+}
+
+.dangerAction {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid #c75b5b;
+  border-radius: 8px;
+  font-family: var(--font-main, Georgia, serif);
+  cursor: pointer;
+  color: #c75b5b;
+  min-height: 44px;
+}
+
+.gameOverOverlay {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(44, 24, 16, 0.1);
+}
+
+.gameOverOverlay h2 {
+  font-family: var(--font-main, Georgia, serif);
+  color: var(--color-text, #2C1810);
+  margin: 0 0 0.5rem;
+}
+
+.gameOverOverlay p {
+  font-family: var(--font-mono, 'Courier New', monospace);
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}

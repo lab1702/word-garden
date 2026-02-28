@@ -1,0 +1,46 @@
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--color-tile, #DEB887);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(44, 24, 16, 0.3);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s;
+}
+
+.tile:hover {
+  transform: scale(1.05);
+}
+
+.selected {
+  outline: 2px solid var(--color-accent, #6B8E23);
+  transform: scale(1.08);
+}
+
+.tentative {
+  opacity: 0.85;
+  box-shadow: 0 0 0 2px var(--color-accent, #6B8E23);
+}
+
+.letter {
+  font-family: var(--font-main, Georgia, serif);
+  font-weight: bold;
+  font-size: clamp(0.6rem, 2.5vw, 1.25rem);
+  color: var(--color-tile-text, #2C1810);
+  line-height: 1;
+}
+
+.points {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: clamp(0.35rem, 1.2vw, 0.6rem);
+  color: var(--color-tile-text, #2C1810);
+  font-family: var(--font-mono, 'Courier New', monospace);
+  line-height: 1;
+}
