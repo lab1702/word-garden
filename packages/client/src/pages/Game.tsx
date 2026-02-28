@@ -38,6 +38,9 @@ export function Game() {
 
   return (
     <div className={styles.gamePage}>
+      <button onClick={() => navigate('/')} className={styles.backButton}>
+        &larr; Lobby
+      </button>
       <div className={styles.scoreboard}>
         <div className={`${styles.playerScore} ${isMyTurn ? styles.activePlayer : ''}`}>
           <span className={styles.playerLabel}>You</span>

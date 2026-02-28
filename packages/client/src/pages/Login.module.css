@@ -8,10 +8,10 @@
 }
 
 .card {
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 2.5rem;
-  box-shadow: 0 4px 24px rgba(44, 24, 16, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   max-width: 400px;
   width: 100%;
 }
@@ -39,11 +39,13 @@
 
 .input {
   padding: 0.75rem 1rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-input-border);
   border-radius: 8px;
   font-size: 1rem;
   font-family: var(--font-main, Georgia, serif);
   transition: border-color 0.2s;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .input:focus {
@@ -52,7 +54,7 @@
 }
 
 .error {
-  color: #c75b5b;
+  color: var(--color-danger);
   margin: 0;
   font-size: 0.875rem;
   text-align: center;

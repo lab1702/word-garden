@@ -29,8 +29,8 @@
 }
 
 .actionButtonCancel {
-  background: #c75b5b;
-  color: white;
+  background: var(--color-danger);
+  color: var(--color-text);
 }
 
 .joinRow {
@@ -41,17 +41,19 @@
 .joinInput {
   flex: 1;
   padding: 0.75rem 1rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-input-border);
   border-radius: 8px;
   font-size: 1rem;
   font-family: var(--font-mono, 'Courier New', monospace);
   letter-spacing: 0.1em;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .joinButton {
   padding: 0.75rem 1.5rem;
-  background: var(--color-text, #2C1810);
-  color: white;
+  background: var(--color-accent, #6B8E23);
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-family: var(--font-main, Georgia, serif);
@@ -65,7 +67,7 @@
 }
 
 .inviteBox {
-  background: #e8f0e0;
+  background: var(--color-invite-bg);
   padding: 1rem;
   border-radius: 8px;
   text-align: center;
@@ -85,7 +87,7 @@
 }
 
 .error {
-  color: #c75b5b;
+  color: var(--color-danger);
   text-align: center;
 }
 
@@ -100,7 +102,7 @@
   color: var(--color-text, #2C1810);
   font-size: 1.25rem;
   margin: 1.5rem 0 0.75rem;
-  border-bottom: 2px solid #e0d8cc;
+  border-bottom: 2px solid var(--color-border);
   padding-bottom: 0.5rem;
 }
 
@@ -109,16 +111,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   margin-bottom: 0.5rem;
   cursor: pointer;
   transition: box-shadow 0.2s;
-  box-shadow: 0 1px 4px rgba(44, 24, 16, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .gameCard:hover {
-  box-shadow: 0 2px 12px rgba(44, 24, 16, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 .yourTurn {
@@ -137,7 +139,7 @@
 }
 
 .score {
-  color: #666;
+  color: var(--color-text-muted);
   font-family: var(--font-mono, 'Courier New', monospace);
 }
 
@@ -149,5 +151,5 @@
 
 .finished {
   font-size: 0.875rem;
-  color: #888;
+  color: var(--color-text-muted);
 }

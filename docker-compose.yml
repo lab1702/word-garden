@@ -13,13 +13,13 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "9000:3000"
     environment:
       DATABASE_URL: postgres://wordgarden:wordgarden_dev@db:5432/wordgarden
       SESSION_SECRET: dev-secret-change-in-production
       RP_ID: localhost
       RP_NAME: Word Garden
-      ORIGIN: http://localhost:3000
+      ORIGIN: http://localhost:9000
     depends_on:
       - db
 

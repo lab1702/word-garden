@@ -9,6 +9,7 @@ import {
 import pool from '../db/pool.js';
 import { createToken } from '../services/session.js';
 import { requireAuth } from '../middleware/auth.js';
+import { containsProfanity } from '../services/profanityFilter.js';
 
 const router = Router();
 
@@ -28,6 +29,10 @@ router.post('/register/password', async (req, res) => {
   }
   if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
     res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
+    return;
+  }
+  if (containsProfanity(username)) {
+    res.status(400).json({ error: 'Username contains inappropriate language' });
     return;
   }
   if (password.length < 8) {
@@ -91,6 +96,10 @@ router.post('/register/passkey/options', async (req, res) => {
   }
   if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
     res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
+    return;
+  }
+  if (containsProfanity(username)) {
+    res.status(400).json({ error: 'Username contains inappropriate language' });
     return;
   }
 

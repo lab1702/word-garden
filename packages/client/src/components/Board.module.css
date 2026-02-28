@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e8e0d0;
+  background: var(--color-cell);
   aspect-ratio: 1;
   cursor: pointer;
   border-radius: 1px;
@@ -23,7 +23,7 @@
 }
 
 .cell:hover {
-  background: #d8d0c0;
+  background: var(--color-cell-hover);
 }
 
 .premiumDW {
@@ -45,7 +45,7 @@
 .premiumLabel {
   font-size: clamp(0.35rem, 1.3vw, 0.6rem);
   font-weight: bold;
-  color: rgba(44, 24, 16, 0.5);
+  color: rgba(255, 255, 255, 0.7);
   font-family: var(--font-mono, 'Courier New', monospace);
   line-height: 1;
 }

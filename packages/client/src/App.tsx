@@ -16,11 +16,11 @@ export function App() {
   return (
     <BrowserRouter>
       <div>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '2px solid #e0d8cc' }}>
-          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 'bold', color: '#2C1810' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '2px solid var(--color-border)' }}>
+          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 'bold', color: 'var(--color-text)' }}>
             {user.username} ({Math.round(user.rating)})
           </span>
-          <button onClick={logout} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer' }}>
+          <button onClick={logout} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-text)' }}>
             Sign Out
           </button>
         </header>
