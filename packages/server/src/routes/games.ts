@@ -32,33 +32,48 @@ router.post('/join/:inviteCode', requireAuth, async (req, res) => {
   const userId = req.user!.userId;
   const { inviteCode } = req.params;
 
-  const gameResult = await pool.query(
-    `SELECT * FROM games WHERE invite_code = $1 AND status = 'waiting' FOR UPDATE`,
-    [inviteCode],
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  if (gameResult.rows.length === 0) {
-    res.status(404).json({ error: 'Game not found or already started' });
-    return;
+    const gameResult = await client.query(
+      `SELECT * FROM games WHERE invite_code = $1 AND status = 'waiting' FOR UPDATE`,
+      [inviteCode],
+    );
+
+    if (gameResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(404).json({ error: 'Game not found or already started' });
+      return;
+    }
+
+    const game = gameResult.rows[0];
+    if (game.player1_id === userId) {
+      await client.query('ROLLBACK');
+      res.status(400).json({ error: 'Cannot join your own game' });
+      return;
+    }
+
+    const tileBag: Tile[] = game.tile_bag;
+    const { rack, remainingBag } = drawTilesForPlayer2(tileBag);
+
+    await client.query(
+      `UPDATE games SET player2_id = $1, player2_rack = $2, tile_bag = $3, status = 'active', updated_at = NOW()
+       WHERE id = $4`,
+      [userId, JSON.stringify(rack), JSON.stringify(remainingBag), game.id],
+    );
+
+    await client.query('COMMIT');
+
+    sendEvent(game.player1_id, 'game_started', { gameId: game.id });
+    res.json({ id: game.id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Join game error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  } finally {
+    client.release();
   }
-
-  const game = gameResult.rows[0];
-  if (game.player1_id === userId) {
-    res.status(400).json({ error: 'Cannot join your own game' });
-    return;
-  }
-
-  const tileBag: Tile[] = game.tile_bag;
-  const { rack, remainingBag } = drawTilesForPlayer2(tileBag);
-
-  await pool.query(
-    `UPDATE games SET player2_id = $1, player2_rack = $2, tile_bag = $3, status = 'active', updated_at = NOW()
-     WHERE id = $4`,
-    [userId, JSON.stringify(rack), JSON.stringify(remainingBag), game.id],
-  );
-
-  sendEvent(game.player1_id, 'game_started', { gameId: game.id });
-  res.json({ id: game.id });
 });
 
 // POST /games/matchmake
@@ -187,12 +202,14 @@ router.post('/:id/move', requireAuth, async (req, res) => {
     );
 
     if (gameResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       res.status(404).json({ error: 'Game not found' });
       return;
     }
 
     const g = gameResult.rows[0];
     if (g.status !== 'active') {
+      await client.query('ROLLBACK');
       res.status(400).json({ error: 'Game is not active' });
       return;
     }
@@ -200,12 +217,14 @@ router.post('/:id/move', requireAuth, async (req, res) => {
     const isPlayer1 = g.player1_id === userId;
     const isPlayer2 = g.player2_id === userId;
     if (!isPlayer1 && !isPlayer2) {
+      await client.query('ROLLBACK');
       res.status(403).json({ error: 'Not a participant' });
       return;
     }
 
     const playerNum = isPlayer1 ? 1 : 2;
     if (g.current_turn !== playerNum) {
+      await client.query('ROLLBACK');
       res.status(400).json({ error: 'Not your turn' });
       return;
     }
@@ -217,6 +236,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
     if (moveType === 'play') {
       if (!tiles || tiles.length === 0) {
+        await client.query('ROLLBACK');
         res.status(400).json({ error: 'No tiles provided' });
         return;
       }
@@ -228,6 +248,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
           t.isBlank ? r.letter === '' : r.letter === t.letter
         );
         if (idx === -1) {
+          await client.query('ROLLBACK');
           res.status(400).json({ error: `Tile ${t.letter} not in your rack` });
           return;
         }
@@ -237,6 +258,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       // Validate placement
       const validation = validatePlacement(board, tiles, isFirstMove);
       if (!validation.valid) {
+        await client.query('ROLLBACK');
         res.status(400).json({ error: validation.error });
         return;
       }
@@ -245,6 +267,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       const words = findFormedWords(board, tiles);
       for (const w of words) {
         if (!isValidWord(w.word)) {
+          await client.query('ROLLBACK');
           res.status(400).json({ error: `"${w.word}" is not a valid word` });
           return;
         }
@@ -371,10 +394,22 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
     } else if (moveType === 'exchange') {
       if (!exchangeTiles || exchangeTiles.length === 0) {
+        await client.query('ROLLBACK');
         res.status(400).json({ error: 'No tiles to exchange' });
         return;
       }
+      if (!exchangeTiles.every((i: number) => Number.isInteger(i) && i >= 0 && i < rack.length)) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ error: 'Invalid tile indices' });
+        return;
+      }
+      if (new Set(exchangeTiles).size !== exchangeTiles.length) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ error: 'Duplicate tile indices' });
+        return;
+      }
       if (tileBag.length < exchangeTiles.length) {
+        await client.query('ROLLBACK');
         res.status(400).json({ error: 'Not enough tiles in bag' });
         return;
       }
@@ -394,11 +429,35 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       }
 
       const rackField = isPlayer1 ? 'player1_rack' : 'player2_rack';
-      await client.query(
-        `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
-         consecutive_passes = consecutive_passes + 1, updated_at = NOW() WHERE id = $4`,
-        [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1, g.id],
-      );
+      const newConsecutivePasses = g.consecutive_passes + 1;
+      const gameOver = newConsecutivePasses >= MAX_CONSECUTIVE_PASSES;
+      let winnerId = null;
+
+      if (gameOver) {
+        const p1Rack: Tile[] = isPlayer1 ? newRack : g.player1_rack;
+        const p2Rack: Tile[] = isPlayer2 ? newRack : g.player2_rack;
+        const p1Deduct = p1Rack.reduce((s: number, t: Tile) => s + t.points, 0);
+        const p2Deduct = p2Rack.reduce((s: number, t: Tile) => s + t.points, 0);
+        const p1Score = g.player1_score - p1Deduct;
+        const p2Score = g.player2_score - p2Deduct;
+        winnerId = p1Score > p2Score ? g.player1_id : p2Score > p1Score ? g.player2_id : null;
+
+        await client.query(
+          `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
+           consecutive_passes = $4, player1_score = $5, player2_score = $6,
+           status = 'finished', winner_id = $7, updated_at = NOW() WHERE id = $8`,
+          [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1,
+           newConsecutivePasses, p1Score, p2Score, winnerId, g.id],
+        );
+        await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+      } else {
+        await client.query(
+          `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
+           consecutive_passes = $4, updated_at = NOW() WHERE id = $5`,
+          [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1,
+           newConsecutivePasses, g.id],
+        );
+      }
 
       await client.query(
         `INSERT INTO moves (game_id, player_id, move_type, score) VALUES ($1, $2, 'exchange', 0)`,
@@ -408,8 +467,8 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       await client.query('COMMIT');
 
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-      sendEvent(opponentId, 'opponent_moved', { gameId: g.id });
-      res.json({ newRack });
+      sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id });
+      res.json({ newRack, gameOver });
     }
   } catch (err) {
     await client.query('ROLLBACK');

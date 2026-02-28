@@ -74,6 +74,7 @@ export function useGame(gameId: string) {
     // Blank tile — prompt for letter choice
     if (tile.letter === '') {
       setPendingBlankPlacement({ row, col, rackIndex: selectedTileIndex });
+      setSelectedTileIndex(null);
       return;
     }
 
@@ -95,10 +96,9 @@ export function useGame(gameId: string) {
       ...prev,
       { row, col, letter, isBlank: true, rackIndex },
     ]);
-    setRack(prev => prev.filter((_, i) => i !== selectedTileIndex!));
-    setSelectedTileIndex(null);
+    setRack(prev => prev.filter((_, i) => i !== rackIndex));
     setPendingBlankPlacement(null);
-  }, [pendingBlankPlacement, selectedTileIndex]);
+  }, [pendingBlankPlacement]);
 
   const cancelBlankTile = useCallback(() => {
     setPendingBlankPlacement(null);

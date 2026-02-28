@@ -157,21 +157,31 @@ router.post('/register/passkey/verify', async (req, res) => {
 
     const { credential: cred } = verification.registrationInfo;
 
-    const userResult = await pool.query(
-      'INSERT INTO users (username) VALUES ($1) RETURNING id, username, rating',
-      [username],
-    );
-    const user = userResult.rows[0];
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const userResult = await client.query(
+        'INSERT INTO users (username) VALUES ($1) RETURNING id, username, rating',
+        [username],
+      );
+      const user = userResult.rows[0];
 
-    await pool.query(
-      'INSERT INTO user_credentials (user_id, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)',
-      [user.id, cred.id, Buffer.from(cred.publicKey), cred.counter],
-    );
+      await client.query(
+        'INSERT INTO user_credentials (user_id, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)',
+        [user.id, cred.id, Buffer.from(cred.publicKey), cred.counter],
+      );
+      await client.query('COMMIT');
 
-    challenges.delete(username);
-    const token = createToken({ userId: user.id, username: user.username });
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
-    res.json({ id: user.id, username: user.username, rating: user.rating });
+      challenges.delete(username);
+      const token = createToken({ userId: user.id, username: user.username });
+      res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+      res.json({ id: user.id, username: user.username, rating: user.rating });
+    } catch (innerErr) {
+      await client.query('ROLLBACK');
+      throw innerErr;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     res.status(400).json({ error: 'Registration failed' });
   }
