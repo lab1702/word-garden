@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, type CSSProperties } from 'react';
+import { useRef, useCallback, useState, useEffect, type CSSProperties } from 'react';
 
 interface DragState {
   dragIndex: number | null;
@@ -23,6 +23,13 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
   const didDragRef = useRef(false);
   const dragIndexRef = useRef<number | null>(null);
   const overIndexRef = useRef<number | null>(null);
+  const dropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    };
+  }, []);
 
   const hitTest = useCallback((clientX: number, clientY: number): number | null => {
     const rects = rectsRef.current;
@@ -99,7 +106,8 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
       setDropping(true);
       setDropTarget({ x: targetX, y: targetY });
 
-      setTimeout(() => {
+      dropTimerRef.current = setTimeout(() => {
+        dropTimerRef.current = null;
         onReorder(savedDragIndex, savedOverIndex);
         cleanup();
       }, 150);
@@ -144,7 +152,7 @@ export function useRackDrag({ onReorder, disabled }: UseRackDragOptions) {
     // Other tiles slide to preview the reordered arrangement
     const rects = rectsRef.current;
     if (rects.length === 0) return {};
-    const slotWidth = rects[0].width + 4; // tile width + gap
+    const slotWidth = rects.length > 1 ? rects[1].left - rects[0].left : rects[0].width + 4;
 
     let shift = 0;
     if (dragIndex < overIndex) {
