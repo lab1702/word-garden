@@ -15,7 +15,7 @@ interface RackProps {
 }
 
 export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exchangeMode, exchangeSelection }: RackProps) {
-  const { dragState, suppressClickRef, setSlotRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useRackDrag({
+  const { dragState, suppressClickRef, setSlotRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, getSlotStyle } = useRackDrag({
     onReorder,
     disabled: exchangeMode,
   });
@@ -33,14 +33,14 @@ export function Rack({ tiles, selectedIndex, onSelect, onShuffle, onReorder, exc
       <div className={styles.rack}>
         {tiles.map((tile, i) => {
           const isDragging = dragState.dragIndex === i;
-          const isDropTarget = dragState.dragIndex !== null && dragState.overIndex === i && dragState.dragIndex !== i;
-          const slotClass = `${styles.rackSlot}${isDragging ? ` ${styles.dragging}` : ''}${isDropTarget ? ` ${styles.dropTarget}` : ''}`;
+          const slotClass = `${styles.rackSlot}${isDragging ? ` ${styles.lifting}` : ''}`;
 
           return (
             <div
               key={i}
               ref={(el) => setSlotRef(i, el)}
               className={slotClass}
+              style={getSlotStyle(i)}
               onPointerDown={(e) => onPointerDown(e, i)}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
