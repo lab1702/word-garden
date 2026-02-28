@@ -43,6 +43,8 @@ export function useGame(gameId: string) {
       setRack(data.rack);
       setTentativePlacements([]);
       setSelectedTileIndex(null);
+      setExchangeMode(false);
+      setExchangeSelection(new Set());
     } catch (err: any) {
       setError(err.message);
     }

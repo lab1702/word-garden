@@ -287,6 +287,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
           res.status(400).json({ error: 'Invalid tile placement data' });
           return;
         }
+        t.letter = t.letter.toUpperCase();
       }
 
       // Validate tiles are in player's rack
@@ -313,6 +314,11 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
       // Check all formed words are valid
       const words = findFormedWords(board, tiles);
+      if (words.length === 0) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ error: 'Move must form at least one word' });
+        return;
+      }
       for (const w of words) {
         if (!isValidWord(w.word)) {
           await client.query('ROLLBACK');
@@ -388,9 +394,10 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
       await client.query('COMMIT');
 
-      // Notify opponent
+      // Post-commit notifications (fire-and-forget)
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-      sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id });
+      try { sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id }); }
+      catch (e) { console.error('SSE notification failed:', e); }
 
       res.json({
         score: scoreResult.totalScore,
@@ -399,6 +406,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
         newRack: newRack,
         gameOver,
       });
+      return;
 
     } else if (moveType === 'pass') {
       const newConsecutivePasses = g.consecutive_passes + 1;
@@ -437,11 +445,13 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       await client.query('COMMIT');
 
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-      sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id });
+      try { sendEvent(opponentId, gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id }); }
+      catch (e) { console.error('SSE notification failed:', e); }
       res.json({ gameOver });
+      return;
 
     } else if (moveType === 'exchange') {
-      if (!exchangeTiles || exchangeTiles.length === 0) {
+      if (!Array.isArray(exchangeTiles) || exchangeTiles.length === 0) {
         await client.query('ROLLBACK');
         res.status(400).json({ error: 'No tiles to exchange' });
         return;
@@ -492,8 +502,10 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       await client.query('COMMIT');
 
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-      sendEvent(opponentId, 'opponent_moved', { gameId: g.id });
+      try { sendEvent(opponentId, 'opponent_moved', { gameId: g.id }); }
+      catch (e) { console.error('SSE notification failed:', e); }
       res.json({ newRack, gameOver: false });
+      return;
     } else {
       await client.query('ROLLBACK');
       res.status(400).json({ error: 'Invalid move type' });
@@ -557,8 +569,10 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
     await client.query('COMMIT');
 
     const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-    sendEvent(opponentId, 'game_finished', { gameId: g.id });
+    try { sendEvent(opponentId, 'game_finished', { gameId: g.id }); }
+    catch (e) { console.error('SSE notification failed:', e); }
     res.json({ ok: true });
+    return;
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Resign error:', err);
@@ -569,13 +583,18 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
 });
 
 async function updateRatings(client: any, player1Id: string, player2Id: string, winnerId: string | null) {
-  const p1 = await client.query('SELECT rating, rating_deviation, rating_volatility FROM users WHERE id = $1', [player1Id]);
-  const p2 = await client.query('SELECT rating, rating_deviation, rating_volatility FROM users WHERE id = $1', [player2Id]);
+  // Lock user rows in consistent order to prevent deadlocks
+  const [firstId, secondId] = player1Id < player2Id ? [player1Id, player2Id] : [player2Id, player1Id];
+  const first = await client.query('SELECT id, rating, rating_deviation, rating_volatility FROM users WHERE id = $1 FOR UPDATE', [firstId]);
+  const second = await client.query('SELECT id, rating, rating_deviation, rating_volatility FROM users WHERE id = $1 FOR UPDATE', [secondId]);
+
+  const p1Data = first.rows[0].id === player1Id ? first.rows[0] : second.rows[0];
+  const p2Data = first.rows[0].id === player1Id ? second.rows[0] : first.rows[0];
 
   const outcome = winnerId === player1Id ? 1 : winnerId === player2Id ? -1 : 0;
   const newRatings = calculateNewRatings(
-    { rating: p1.rows[0].rating, deviation: p1.rows[0].rating_deviation, volatility: p1.rows[0].rating_volatility },
-    { rating: p2.rows[0].rating, deviation: p2.rows[0].rating_deviation, volatility: p2.rows[0].rating_volatility },
+    { rating: p1Data.rating, deviation: p1Data.rating_deviation, volatility: p1Data.rating_volatility },
+    { rating: p2Data.rating, deviation: p2Data.rating_deviation, volatility: p2Data.rating_volatility },
     outcome as 1 | 0 | -1,
   );
 

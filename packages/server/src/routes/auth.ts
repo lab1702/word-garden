@@ -148,6 +148,10 @@ router.post('/register/passkey/options', async (req, res) => {
 // POST /auth/register/passkey/verify
 router.post('/register/passkey/verify', async (req, res) => {
   const { username, credential } = req.body;
+  if (!username || !credential) {
+    res.status(400).json({ error: 'Username and credential required' });
+    return;
+  }
   const expectedChallenge = challenges.get(username);
   if (!expectedChallenge) {
     res.status(400).json({ error: 'No pending registration' });
@@ -237,6 +241,10 @@ router.post('/login/passkey/options', async (req, res) => {
 // POST /auth/login/passkey/verify
 router.post('/login/passkey/verify', async (req, res) => {
   const { username, credential } = req.body;
+  if (!username || !credential) {
+    res.status(400).json({ error: 'Username and credential required' });
+    return;
+  }
   const expectedChallenge = challenges.get(`login:${username}`);
   if (!expectedChallenge) {
     res.status(400).json({ error: 'No pending login' });
