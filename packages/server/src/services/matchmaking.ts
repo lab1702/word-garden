@@ -3,13 +3,18 @@ import pool from '../db/pool.js';
 import { sendEvent } from './sse.js';
 import { initializeGame, drawTilesForPlayer2 } from './gameEngine.js';
 
-export async function enterQueue(userId: string, rating: number, ratingDeviation: number): Promise<{ matched: boolean; gameId?: string }> {
+export async function enterQueue(userId: string, rating: number, ratingDeviation: number): Promise<{ matched: boolean; gameId?: string; busy?: boolean }> {
   const client = await pool.connect();
+  let notification: { opponentId: string; gameId: string } | null = null;
+
   try {
     await client.query('BEGIN');
 
-    // Acquire advisory lock to coordinate with sweepQueue
-    await client.query('SELECT pg_advisory_lock(42)');
+    const lockResult = await client.query('SELECT pg_try_advisory_lock(42) AS acquired');
+    if (!lockResult.rows[0].acquired) {
+      await client.query('ROLLBACK');
+      return { matched: false, busy: true };
+    }
 
     try {
       // Try to find a match first
@@ -45,11 +50,7 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
 
         const gameId = gameResult.rows[0].id;
         await client.query('COMMIT');
-
-        // Notify both players (after commit)
-        sendEvent(userId, 'match_found', { gameId });
-        sendEvent(opponent.user_id, 'match_found', { gameId });
-
+        notification = { opponentId: opponent.user_id, gameId };
         return { matched: true, gameId };
       }
 
@@ -68,6 +69,12 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
     throw err;
   } finally {
     client.release();
+
+    // Send notifications after releasing connection and lock
+    if (notification) {
+      sendEvent(userId, 'match_found', { gameId: notification.gameId });
+      sendEvent(notification.opponentId, 'match_found', { gameId: notification.gameId });
+    }
   }
 }
 

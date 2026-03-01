@@ -129,6 +129,10 @@ router.post('/matchmake', requireAuth, async (req, res) => {
     const user = userResult.rows[0];
 
     const result = await enterQueue(userId, user.rating, user.rating_deviation);
+    if (result.busy) {
+      res.status(503).json({ error: 'Matchmaking busy, please retry shortly' });
+      return;
+    }
     res.json(result);
   } catch (err) {
     console.error('Matchmake error:', err);
