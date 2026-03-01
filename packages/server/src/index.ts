@@ -10,7 +10,7 @@ import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
 import leaderboardRouter from './routes/leaderboard.js';
-import { addClient, closeAllConnections, isAtCapacity } from './services/sse.js';
+import { addClient, closeAllConnections, isAtCapacity, sendLobbyStats } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
 import { sweepQueue } from './services/matchmaking.js';
 import { startCacheCleanup } from './services/tokenVersionCache.js';
@@ -59,6 +59,7 @@ app.get('/api/events', requireAuth, (req, res) => {
   }, 25000);
   res.on('close', () => clearInterval(heartbeat));
   addClient(req.user!.userId, res);
+  sendLobbyStats(req.user!.userId);
 });
 
 // Serve static client assets in production
