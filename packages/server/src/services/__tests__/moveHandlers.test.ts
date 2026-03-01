@@ -4,7 +4,7 @@ import type { Tile, TilePlacement } from '@word-garden/shared';
 import { handlePlayMove, handlePassMove, handleExchangeMove } from '../moveHandlers.js';
 import { loadDictionary } from '../dictionary.js';
 
-function makeMockClient() {
+function makeMockClient(): any {
   const calls: { text: string; values: any[] }[] = [];
   return {
     query: vi.fn(async (text: string, values?: any[]) => {
@@ -22,7 +22,7 @@ function makeRack(letters: string): Tile[] {
   }));
 }
 
-function makeGameRow(overrides: Record<string, any> = {}) {
+function makeGameRow(overrides: Record<string, any> = {}): any {
   return {
     id: 'game-1',
     player1_id: 'user-1',

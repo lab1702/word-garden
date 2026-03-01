@@ -133,10 +133,10 @@ export async function handlePlayMove(
   );
 
   if (gameOver) {
-    await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+    await updateRatings(client, g.player1_id!, g.player2_id!, winnerId);
   }
 
-  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
+  const opponentId = isPlayer1 ? g.player2_id! : g.player1_id!;
 
   return {
     type: 'success',
@@ -176,7 +176,7 @@ export async function handlePassMove(
        WHERE id = $6`,
       [g.current_turn === 1 ? 2 : 1, newConsecutivePasses, p1Score, p2Score, winnerId, g.id],
     );
-    await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+    await updateRatings(client, g.player1_id!, g.player2_id!, winnerId);
   } else {
     await client.query(
       `UPDATE games SET current_turn = $1, consecutive_passes = $2, updated_at = NOW() WHERE id = $3`,
@@ -189,7 +189,7 @@ export async function handlePassMove(
     [g.id, userId],
   );
 
-  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
+  const opponentId = isPlayer1 ? g.player2_id! : g.player1_id!;
 
   return {
     type: 'success',
@@ -251,7 +251,7 @@ export async function handleExchangeMove(
     [g.id, userId],
   );
 
-  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
+  const opponentId = isPlayer1 ? g.player2_id! : g.player1_id!;
 
   return {
     type: 'success',
