@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 
 type EventHandler = (data: any) => void;
 
@@ -7,10 +7,7 @@ export function useSSE(handlers: Record<string, EventHandler>) {
   handlersRef.current = handlers;
 
   // Resubscribe when the set of event names changes
-  const eventKeys = useMemo(
-    () => Object.keys(handlers).sort().join(','),
-    [Object.keys(handlers).sort().join(',')],
-  );
+  const eventKeys = Object.keys(handlers).sort().join(',');
 
   useEffect(() => {
     const basePath = import.meta.env.VITE_BASE_PATH || '';
