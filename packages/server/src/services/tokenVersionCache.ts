@@ -25,8 +25,8 @@ export function invalidateTokenVersion(userId: string): void {
   cache.delete(userId);
 }
 
-export function startCacheCleanup(): void {
-  setInterval(() => {
+export function startCacheCleanup(): ReturnType<typeof setInterval> {
+  return setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of cache) {
       if (now > entry.expiresAt) cache.delete(key);

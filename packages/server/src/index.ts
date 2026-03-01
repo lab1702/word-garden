@@ -10,7 +10,7 @@ import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
 import leaderboardRouter from './routes/leaderboard.js';
-import { addClient } from './services/sse.js';
+import { addClient, closeAllConnections } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
 import { sweepQueue } from './services/matchmaking.js';
 import { startCacheCleanup } from './services/tokenVersionCache.js';
@@ -99,12 +99,33 @@ async function start() {
   await waitForDb();
   await runMigrations();
   await loadDictionary();
-  setInterval(cleanupStaleRecords, 60 * 60 * 1000);
-  setInterval(sweepQueue, 5000);
-  startCacheCleanup();
-  app.listen(PORT, () => {
+  const cleanupInterval = setInterval(cleanupStaleRecords, 60 * 60 * 1000);
+  const sweepInterval = setInterval(sweepQueue, 5000);
+  const cacheInterval = startCacheCleanup();
+  const server = app.listen(PORT, () => {
     console.log(`Word Garden server running on port ${PORT}`);
   });
+
+  function shutdown(signal: string) {
+    console.log(`${signal} received, shutting down...`);
+    clearInterval(cleanupInterval);
+    clearInterval(sweepInterval);
+    clearInterval(cacheInterval);
+    closeAllConnections();
+    server.close(() => {
+      pool.end().then(() => {
+        console.log('Shutdown complete');
+        process.exit(0);
+      });
+    });
+    setTimeout(() => {
+      console.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10_000).unref();
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 start().catch(console.error);

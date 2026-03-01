@@ -46,6 +46,15 @@ export function disconnectUser(userId: string): void {
   clients.delete(userId);
 }
 
+export function closeAllConnections(): void {
+  for (const [, userClients] of clients) {
+    for (const res of userClients) {
+      try { res.end(); } catch { /* already closed */ }
+    }
+  }
+  clients.clear();
+}
+
 export function broadcastEvent(event: string, data: unknown): void {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const [userId, userClients] of clients) {
