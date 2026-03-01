@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Tile } from './Tile.js';
 import { useTileDrag } from '../context/TileDragContext.js';
 import styles from './Board.module.css';
-import { LETTER_POINTS } from '@word-garden/shared';
+import { LETTER_POINTS, BOARD_SIZE, CENTER } from '@word-garden/shared';
 import type { BoardCell, TilePlacement, Tile as TileType } from '@word-garden/shared';
 
 interface BoardProps {
@@ -23,6 +23,17 @@ const PREMIUM_LABELS: Record<string, string> = {
   DL: 'DL',
 };
 
+function getCellFromPointer(e: React.PointerEvent, boardEl: HTMLDivElement): { row: number; col: number } | null {
+  const rect = boardEl.getBoundingClientRect();
+  const style = getComputedStyle(boardEl);
+  const pad = parseFloat(style.paddingLeft) || 0;
+  const cellSize = (rect.width - pad * 2) / BOARD_SIZE;
+  const col = Math.floor((e.clientX - rect.left - pad) / cellSize);
+  const row = Math.floor((e.clientY - rect.top - pad) / cellSize);
+  if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) return { row, col };
+  return null;
+}
+
 export function Board({ board, tentativePlacements, onCellClick, onDropFromRack, onMoveTentative, onReturnToRack, lastMoveTiles = [], isMyTurn }: BoardProps) {
   const tentativeMap = new Map(tentativePlacements.map(t => [`${t.row},${t.col}`, t]));
   const lastMoveSet = new Set(lastMoveTiles.map(t => `${t.row},${t.col}`));
@@ -35,18 +46,12 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
     const boardEl = boardRef.current;
     if (!boardEl) return;
 
-    const rect = boardEl.getBoundingClientRect();
-    const x = e.clientX - rect.left - 4;
-    const y = e.clientY - rect.top - 4;
-    const cellSize = (rect.width - 8) / 15;
-    const col = Math.floor(x / cellSize);
-    const row = Math.floor(y / cellSize);
-
-    if (row >= 0 && row < 15 && col >= 0 && col < 15) {
-      const cell = board[row][col];
-      const hasTentative = tentativePlacements.some(t => t.row === row && t.col === col);
+    const pos = getCellFromPointer(e, boardEl);
+    if (pos) {
+      const cell = board[pos.row][pos.col];
+      const hasTentative = tentativePlacements.some(t => t.row === pos.row && t.col === pos.col);
       if (!cell.tile && !hasTentative) {
-        setHoverCell(prev => (prev?.row === row && prev?.col === col) ? prev : { row, col });
+        setHoverCell(prev => (prev?.row === pos.row && prev?.col === pos.col) ? prev : pos);
       } else {
         setHoverCell(null);
       }
@@ -58,24 +63,17 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragState) return;
 
-    // Compute which cell the pointer is over (same logic as handlePointerMove)
     const boardEl = boardRef.current;
     if (boardEl) {
-      const rect = boardEl.getBoundingClientRect();
-      const x = e.clientX - rect.left - 4;
-      const y = e.clientY - rect.top - 4;
-      const cellSize = (rect.width - 8) / 15;
-      const col = Math.floor(x / cellSize);
-      const row = Math.floor(y / cellSize);
-
-      if (row >= 0 && row < 15 && col >= 0 && col < 15) {
-        const cell = board[row][col];
-        const hasTentative = tentativePlacements.some(t => t.row === row && t.col === col);
+      const pos = getCellFromPointer(e, boardEl);
+      if (pos) {
+        const cell = board[pos.row][pos.col];
+        const hasTentative = tentativePlacements.some(t => t.row === pos.row && t.col === pos.col);
         if (!cell.tile && !hasTentative) {
           if (dragState.source.type === 'rack' && onDropFromRack) {
-            onDropFromRack(row, col, dragState.source.index);
+            onDropFromRack(pos.row, pos.col, dragState.source.index);
           } else if (dragState.source.type === 'board' && onMoveTentative) {
-            onMoveTentative(dragState.source.row, dragState.source.col, row, col);
+            onMoveTentative(dragState.source.row, dragState.source.col, pos.row, pos.col);
           }
         }
       }
@@ -110,7 +108,7 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
           const tentative = tentativeMap.get(`${r},${c}`);
           const isLastMove = lastMoveSet.has(`${r},${c}`);
           const premiumClass = cell.premium ? styles[`premium${cell.premium}`] : '';
-          const isCenter = r === 7 && c === 7;
+          const isCenter = r === CENTER && c === CENTER;
           const isHovered = hoverCell?.row === r && hoverCell?.col === c;
 
           return (

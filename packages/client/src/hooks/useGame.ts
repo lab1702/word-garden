@@ -31,8 +31,10 @@ interface GameData {
 export function useGame(gameId: string, onGameFinished?: () => void) {
   const [game, setGame] = useState<GameData | null>(null);
   const nextTileId = useRef(0);
-  const assignIds = (tiles: Tile[]): RackTile[] =>
-    tiles.map(t => ({ ...t, _id: nextTileId.current++ }));
+  const assignIds = useCallback(
+    (tiles: Tile[]): RackTile[] => tiles.map(t => ({ ...t, _id: nextTileId.current++ })),
+    [],
+  );
   const [rack, setRack] = useState<RackTile[]>([]);
   const [selectedTileIndex, setSelectedTileIndex] = useState<number | null>(null);
   const [tentativePlacements, setTentativePlacements] = useState<(TilePlacement & { rackIndex: number; originalTile: RackTile })[]>([]);
@@ -54,7 +56,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     } catch (err: any) {
       setError(err.message);
     }
-  }, [gameId]);
+  }, [gameId, assignIds]);
 
   useEffect(() => { loadGame(); }, [loadGame]);
 
@@ -168,7 +170,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     setRack(assignIds(game.rack));
     setTentativePlacements([]);
     setSelectedTileIndex(null);
-  }, [game]);
+  }, [game, assignIds]);
 
   const reorderRack = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;

@@ -17,7 +17,6 @@ export function App() {
   }
 
   return (
-    <>
     <BrowserRouter basename={import.meta.env.VITE_BASE_PATH || '/'}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '2px solid var(--color-border)' }}>
@@ -44,13 +43,12 @@ export function App() {
           </Routes>
         </div>
       </div>
+      {showPasswordModal && (
+        <ChangePasswordModal
+          onSubmit={changePassword}
+          onClose={() => setShowPasswordModal(false)}
+        />
+      )}
     </BrowserRouter>
-    {showPasswordModal && (
-      <ChangePasswordModal
-        onSubmit={changePassword}
-        onClose={() => setShowPasswordModal(false)}
-      />
-    )}
-    </>
   );
 }
