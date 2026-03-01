@@ -1,7 +1,18 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import pool from '../db/pool.js';
 
 const router = Router();
+
+const leaderboardLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' },
+});
+
+router.use(leaderboardLimiter);
 
 router.get('/', async (_req, res) => {
   try {
