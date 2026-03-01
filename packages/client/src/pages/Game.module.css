@@ -212,3 +212,41 @@
   color: var(--color-gold);
   margin: 0 0 1rem;
 }
+
+.ratingChanges {
+  margin: 0.75rem 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.ratingPlayer {
+  color: var(--color-text);
+  min-width: 5rem;
+  text-align: right;
+}
+
+.ratingValue {
+  color: var(--color-gold);
+  font-weight: bold;
+}
+
+.ratingUp {
+  color: var(--color-accent);
+}
+
+.ratingDown {
+  color: var(--color-danger);
+}
+
+.rankChange {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}

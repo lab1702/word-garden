@@ -35,6 +35,10 @@ interface GameData {
     totalScore: number;
     createdAt: string;
   } | null;
+  ratingChanges: {
+    me: { ratingBefore: number; ratingAfter: number; rankBefore: number; rankAfter: number };
+    opponent: { ratingBefore: number; ratingAfter: number; rankBefore: number; rankAfter: number };
+  } | null;
 }
 
 export function useGame(gameId: string, onGameFinished?: () => void) {
