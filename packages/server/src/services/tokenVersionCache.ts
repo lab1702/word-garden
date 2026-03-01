@@ -18,11 +18,19 @@ export function getCachedTokenVersion(userId: string): number | null {
 }
 
 export function setCachedTokenVersion(userId: string, version: number): void {
+  const existing = cache.get(userId);
+  // Only update if newer — prevents stale concurrent writes from overwriting a fresh invalidation
+  if (existing && existing.version > version && Date.now() <= existing.expiresAt) return;
   cache.set(userId, { version, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
-export function invalidateTokenVersion(userId: string): void {
-  cache.delete(userId);
+export function invalidateTokenVersion(userId: string, newVersion?: number): void {
+  if (newVersion !== undefined) {
+    // Set the new version so the cache is immediately correct
+    cache.set(userId, { version: newVersion, expiresAt: Date.now() + CACHE_TTL_MS });
+  } else {
+    cache.delete(userId);
+  }
 }
 
 export function startCacheCleanup(): ReturnType<typeof setInterval> {

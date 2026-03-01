@@ -38,8 +38,26 @@ export function useSSE(handlers: Record<string, EventHandler>) {
           es?.close();
           es = null;
           if (!disposed) {
-            reconnectTimer = setTimeout(connect, backoff);
-            backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
+            // Check if auth has expired before reconnecting
+            const basePath = import.meta.env.VITE_BASE_PATH || '';
+            fetch(`${basePath}/api/auth/me`, { credentials: 'include' })
+              .then(res => {
+                if (disposed) return;
+                if (res.status === 401) {
+                  // Auth expired — reload to show login screen
+                  window.location.reload();
+                } else {
+                  // Auth is fine — network issue, keep retrying
+                  reconnectTimer = setTimeout(connect, backoff);
+                  backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
+                }
+              })
+              .catch(() => {
+                if (disposed) return;
+                // Network error — keep retrying
+                reconnectTimer = setTimeout(connect, backoff);
+                backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
+              });
           }
         }
       };

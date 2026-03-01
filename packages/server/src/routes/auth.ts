@@ -385,7 +385,7 @@ router.put('/password', requireAuth, async (req, res) => {
 
     // Disconnect any existing SSE connections (they hold stale tokens)
     disconnectUser(userId);
-    invalidateTokenVersion(userId);
+    invalidateTokenVersion(userId, newVersion);
 
     res.json({ ok: true });
   } catch (err) {
