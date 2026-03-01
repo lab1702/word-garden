@@ -1,0 +1,92 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.headerBrand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.headerTitle {
+  font-family: var(--font-main);
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: var(--color-accent);
+  letter-spacing: 0.02em;
+}
+
+.headerUser {
+  font-family: var(--font-main);
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.headerButton {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.headerButton:hover {
+  background: var(--color-surface-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.headerButtonDanger {
+  composes: headerButton;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.headerButtonDanger:hover {
+  background: var(--color-danger);
+  color: var(--color-text);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: 0.5rem 1rem;
+  }
+
+  .headerTitle {
+    display: none;
+  }
+
+  .headerButton {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}

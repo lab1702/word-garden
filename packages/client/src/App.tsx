@@ -5,6 +5,7 @@ import { Login } from './pages/Login.js';
 import { Lobby } from './pages/Lobby.js';
 import { Game } from './pages/Game.js';
 import { ChangePasswordModal } from './components/ChangePasswordModal.js';
+import styles from './App.module.css';
 
 export function App() {
   const { user, loading, loginWithPassword, registerWithPassword, loginWithPasskey, registerWithPasskey, logout, changePassword, deleteAccount, refreshUser } = useAuth();
@@ -18,24 +19,27 @@ export function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.VITE_BASE_PATH || '/'}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '2px solid var(--color-border)' }}>
-          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 'bold', color: 'var(--color-text)' }}>
-            {user.username} ({Math.round(user.rating)})
-          </span>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => { if (confirm('Delete your account? This will permanently remove all your data and game history.')) deleteAccount(); }} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-danger)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '0.875rem' }}>
+      <div className={styles.layout}>
+        <header className={styles.header}>
+          <div className={styles.headerBrand}>
+            <span className={styles.headerTitle}>Word Garden</span>
+            <span className={styles.headerUser}>
+              {user.username} ({Math.round(user.rating)})
+            </span>
+          </div>
+          <div className={styles.headerActions}>
+            <button onClick={() => { if (confirm('Delete your account? This will permanently remove all your data and game history.')) deleteAccount(); }} className={styles.headerButtonDanger}>
               Delete Account
             </button>
-            <button onClick={() => setShowPasswordModal(true)} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-text)', fontSize: '0.875rem' }}>
+            <button onClick={() => setShowPasswordModal(true)} className={styles.headerButton}>
               Change Password
             </button>
-            <button onClick={logout} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-text)' }}>
+            <button onClick={logout} className={styles.headerButton}>
               Sign Out
             </button>
           </div>
         </header>
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <div className={styles.content}>
           <Routes>
             <Route path="/" element={<Lobby userId={user.id} username={user.username} rating={user.rating} onGameFinished={refreshUser} />} />
             <Route path="/game/:id" element={<Game onGameFinished={refreshUser} />} />
