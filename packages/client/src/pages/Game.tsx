@@ -156,7 +156,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
               <button onClick={pass} disabled={submitting} className={styles.secondaryAction}>
                 Pass
               </button>
-              <button onClick={resign} className={styles.dangerAction}>
+              <button onClick={() => { if (confirm('Are you sure you want to resign? This will count as a loss.')) resign(); }} className={styles.dangerAction}>
                 Resign
               </button>
             </>
