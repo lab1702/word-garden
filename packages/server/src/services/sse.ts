@@ -1,5 +1,6 @@
 import type { Response } from 'express';
 
+const MAX_CONNECTIONS_PER_USER = 5;
 const clients = new Map<string, Response[]>();
 
 function removeClient(userId: string, res: Response): void {
@@ -13,7 +14,12 @@ function removeClient(userId: string, res: Response): void {
 
 export function addClient(userId: string, res: Response): void {
   if (!clients.has(userId)) clients.set(userId, []);
-  clients.get(userId)!.push(res);
+  const userClients = clients.get(userId)!;
+  while (userClients.length >= MAX_CONNECTIONS_PER_USER) {
+    const oldest = userClients.shift()!;
+    try { oldest.end(); } catch { /* already closed */ }
+  }
+  userClients.push(res);
   res.on('close', () => removeClient(userId, res));
   res.on('error', () => removeClient(userId, res));
 }

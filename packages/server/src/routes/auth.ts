@@ -443,12 +443,17 @@ router.post('/logout', (req, res) => {
 
 // GET /auth/me
 router.get('/me', requireAuth, async (req, res) => {
-  const result = await pool.query('SELECT id, username, rating FROM users WHERE id = $1', [req.user!.userId]);
-  if (result.rows.length === 0) {
-    res.status(404).json({ error: 'User not found' });
-    return;
+  try {
+    const result = await pool.query('SELECT id, username, rating FROM users WHERE id = $1', [req.user!.userId]);
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Get current user error:', err);
+    res.status(500).json({ error: 'Internal error' });
   }
-  res.json(result.rows[0]);
 });
 
 export default router;

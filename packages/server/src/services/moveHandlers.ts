@@ -18,9 +18,9 @@ export async function handlePlayMove(
 ): Promise<PlayResult | ErrorResult> {
   const isPlayer1 = g.player1_id === userId;
   const isPlayer2 = g.player2_id === userId;
-  const board = g.board_state;
+  const board = g.board_state.map((row: any[]) => row.map((cell: any) => ({ ...cell, tile: cell.tile ? { ...cell.tile } : null })));
   const rack: Tile[] = isPlayer1 ? g.player1_rack : g.player2_rack;
-  let tileBag: Tile[] = g.tile_bag;
+  const tileBag: Tile[] = [...g.tile_bag];
   const isFirstMove = board.every((row: any[]) => row.every((cell: any) => cell.tile === null));
 
   if (!Array.isArray(tiles) || tiles.length === 0 || tiles.length > RACK_SIZE) {
@@ -202,7 +202,7 @@ export async function handleExchangeMove(
 ): Promise<ExchangeResult | ErrorResult> {
   const isPlayer1 = g.player1_id === userId;
   const rack: Tile[] = isPlayer1 ? g.player1_rack : g.player2_rack;
-  let tileBag: Tile[] = g.tile_bag;
+  const tileBag: Tile[] = [...g.tile_bag];
 
   if (!Array.isArray(exchangeTiles) || exchangeTiles.length === 0) {
     return { type: 'error', status: 400, error: 'No tiles to exchange' };

@@ -24,3 +24,12 @@ export function setCachedTokenVersion(userId: string, version: number): void {
 export function invalidateTokenVersion(userId: string): void {
   cache.delete(userId);
 }
+
+export function startCacheCleanup(): void {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of cache) {
+      if (now > entry.expiresAt) cache.delete(key);
+    }
+  }, 5 * 60 * 1000);
+}

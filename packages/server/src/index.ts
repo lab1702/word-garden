@@ -13,6 +13,7 @@ import leaderboardRouter from './routes/leaderboard.js';
 import { addClient } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
 import { sweepQueue } from './services/matchmaking.js';
+import { startCacheCleanup } from './services/tokenVersionCache.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const clientDist = join(__dirname, '../../client/dist');
@@ -100,6 +101,7 @@ async function start() {
   await loadDictionary();
   setInterval(cleanupStaleRecords, 60 * 60 * 1000);
   setInterval(sweepQueue, 5000);
+  startCacheCleanup();
   app.listen(PORT, () => {
     console.log(`Word Garden server running on port ${PORT}`);
   });
