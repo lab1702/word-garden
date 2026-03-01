@@ -179,7 +179,8 @@
 }
 
 @media (min-width: 960px) {
-  .sidePanel .sectionTitle {
+  .sidePanel .sectionTitle,
+  .centerPanel .sectionTitle:first-child {
     margin-top: 0;
   }
 }

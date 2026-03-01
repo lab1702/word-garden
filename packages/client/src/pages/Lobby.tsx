@@ -156,6 +156,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
         </div>
 
         <div className={styles.centerPanel}>
+          <h2 className={styles.sectionTitle}>Start Playing</h2>
           <div className={styles.actions}>
             <button onClick={createGame} className={styles.actionButton}>Create Game</button>
 
