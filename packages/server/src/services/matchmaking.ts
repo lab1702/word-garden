@@ -38,7 +38,7 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
         await client.query('DELETE FROM matchmaking_queue WHERE user_id = $1', [userId]);
 
         // Create game
-        const game = initializeGame(userId);
+        const game = initializeGame();
         const { rack: player2Rack, remainingBag } = drawTilesForPlayer2(game.tileBag);
 
         const gameResult = await client.query(
@@ -124,7 +124,7 @@ export async function sweepQueue(): Promise<void> {
             ]);
 
             // Create game
-            const game = initializeGame(entry.user_id);
+            const game = initializeGame();
             const { rack: player2Rack, remainingBag } = drawTilesForPlayer2(game.tileBag);
 
             const gameResult = await client.query(

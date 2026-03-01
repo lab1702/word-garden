@@ -41,7 +41,7 @@ interface GameInit {
   player2Score: number;
 }
 
-export function initializeGame(player1Id: string): GameInit {
+export function initializeGame(): GameInit {
   const board = createEmptyBoard();
   let tileBag = secureShuffleBag(createTileBag());
   const player1Rack = tileBag.splice(0, RACK_SIZE);

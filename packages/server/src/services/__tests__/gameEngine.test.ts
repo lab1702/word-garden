@@ -126,7 +126,7 @@ describe('gameEngine', () => {
 
   describe('initializeGame', () => {
     it('creates a game with full tile bag minus two racks', () => {
-      const game = initializeGame('player1-id');
+      const game = initializeGame();
       expect(game.board).toHaveLength(15);
       expect(game.player1Rack).toHaveLength(7);
       expect(game.tileBag).toHaveLength(100 - 7); // 93 tiles remain

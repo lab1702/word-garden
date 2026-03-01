@@ -15,8 +15,22 @@ import { containsProfanity } from '../services/profanityFilter.js';
 import { sendEvent, broadcastEvent, disconnectUser } from '../services/sse.js';
 import { invalidateTokenVersion } from '../services/tokenVersionCache.js';
 import { updateRatings } from '../services/ratings.js';
+import type { CookieOptions } from 'express';
 
 const router = Router();
+
+const COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+};
+
+const CLEAR_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+};
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -69,7 +83,7 @@ router.post('/register/password', async (req, res) => {
     );
     const user = result.rows[0];
     const token = createToken({ userId: user.id, username: user.username, tokenVersion: user.token_version });
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, COOKIE_OPTIONS);
     res.json({ id: user.id, username: user.username, rating: user.rating });
   } catch (err: any) {
     if (err.code === '23505') {
@@ -107,7 +121,7 @@ router.post('/login/password', async (req, res) => {
     }
 
     const token = createToken({ userId: user.id, username: user.username, tokenVersion: user.token_version });
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, COOKIE_OPTIONS);
     res.json({ id: user.id, username: user.username, rating: user.rating });
   } catch (err) {
     console.error('Login error:', err);
@@ -206,7 +220,7 @@ router.post('/register/passkey/verify', async (req, res) => {
       await client.query('COMMIT');
 
       const token = createToken({ userId: user.id, username: user.username, tokenVersion: user.token_version });
-      res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+      res.cookie('token', token, COOKIE_OPTIONS);
       res.json({ id: user.id, username: user.username, rating: user.rating });
     } catch (innerErr) {
       await client.query('ROLLBACK');
@@ -314,7 +328,7 @@ router.post('/login/passkey/verify', async (req, res) => {
     );
 
     const token = createToken({ userId: stored.user_id, username: stored.username, tokenVersion: stored.token_version });
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, COOKIE_OPTIONS);
     res.json({ id: stored.user_id, username: stored.username, rating: stored.rating });
   } catch (err) {
     res.status(401).json({ error: 'Login failed' });
@@ -362,7 +376,7 @@ router.put('/password', requireAuth, async (req, res) => {
 
     // Issue a fresh token so the current session stays valid
     const token = createToken({ userId, username: req.user!.username, tokenVersion: newVersion });
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, COOKIE_OPTIONS);
 
     // Disconnect any existing SSE connections (they hold stale tokens)
     disconnectUser(userId);
@@ -423,7 +437,7 @@ router.delete('/account', requireAuth, async (req, res) => {
 
     disconnectUser(userId);
     invalidateTokenVersion(userId);
-    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.clearCookie('token', CLEAR_COOKIE_OPTIONS);
     res.json({ ok: true });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -440,7 +454,7 @@ router.post('/logout', (req, res) => {
   const payload = req.cookies?.token ? verifyToken(req.cookies.token) : null;
   if (payload) disconnectUser(payload.userId);
 
-  res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+  res.clearCookie('token', CLEAR_COOKIE_OPTIONS);
   res.json({ ok: true });
 });
 

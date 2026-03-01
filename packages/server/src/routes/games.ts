@@ -38,7 +38,7 @@ router.post('/', requireAuth, async (req, res) => {
       return;
     }
 
-    const game = initializeGame(userId);
+    const game = initializeGame();
 
     let result;
     for (let attempt = 0; attempt < 3; attempt++) {

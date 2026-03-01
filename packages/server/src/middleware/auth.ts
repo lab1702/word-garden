@@ -3,6 +3,12 @@ import { verifyToken, type SessionPayload } from '../services/session.js';
 import pool from '../db/pool.js';
 import { getCachedTokenVersion, setCachedTokenVersion } from '../services/tokenVersionCache.js';
 
+const CLEAR_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+};
+
 declare global {
   namespace Express {
     interface Request {
@@ -27,14 +33,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const cachedVersion = getCachedTokenVersion(payload.userId);
   if (cachedVersion !== null) {
     if (cachedVersion !== payload.tokenVersion) {
-      res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+      res.clearCookie('token', CLEAR_COOKIE_OPTIONS);
       res.status(401).json({ error: 'Token revoked' });
       return;
     }
   } else {
     const result = await pool.query('SELECT token_version FROM users WHERE id = $1', [payload.userId]);
     if (result.rows.length === 0 || result.rows[0].token_version !== payload.tokenVersion) {
-      res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+      res.clearCookie('token', CLEAR_COOKIE_OPTIONS);
       res.status(401).json({ error: 'Token revoked' });
       return;
     }
