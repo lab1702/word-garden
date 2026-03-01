@@ -4,15 +4,16 @@ import { isValidWord } from './dictionary.js';
 import { updateRatings } from './ratings.js';
 import { RACK_SIZE, LETTER_POINTS, MAX_CONSECUTIVE_PASSES, BOARD_SIZE } from '@word-garden/shared';
 import type { TilePlacement, Tile } from '@word-garden/shared';
+import type { PoolClient, GameRow } from '../types.js';
 
 type ErrorResult = { type: 'error'; status: number; error: string };
-type PlayResult = { type: 'success'; score: number; wordScores: any; bingo: boolean; newRack: any; gameOver: boolean; opponentId: string };
+type PlayResult = { type: 'success'; score: number; wordScores: { word: string; score: number }[]; bingo: boolean; newRack: Tile[]; gameOver: boolean; opponentId: string };
 type PassResult = { type: 'success'; gameOver: boolean; opponentId: string };
-type ExchangeResult = { type: 'success'; newRack: any; opponentId: string };
+type ExchangeResult = { type: 'success'; newRack: Tile[]; opponentId: string };
 
 export async function handlePlayMove(
-  client: any,
-  g: any,
+  client: PoolClient,
+  g: GameRow,
   userId: string,
   tiles: TilePlacement[] | undefined,
 ): Promise<PlayResult | ErrorResult> {
@@ -146,8 +147,8 @@ export async function handlePlayMove(
 }
 
 export async function handlePassMove(
-  client: any,
-  g: any,
+  client: PoolClient,
+  g: GameRow,
   userId: string,
 ): Promise<PassResult | ErrorResult> {
   const isPlayer1 = g.player1_id === userId;
@@ -195,8 +196,8 @@ export async function handlePassMove(
 }
 
 export async function handleExchangeMove(
-  client: any,
-  g: any,
+  client: PoolClient,
+  g: GameRow,
   userId: string,
   exchangeTiles: number[] | undefined,
 ): Promise<ExchangeResult | ErrorResult> {
