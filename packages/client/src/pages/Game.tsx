@@ -117,18 +117,18 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
 
       {error && <p className={styles.error}>{error}</p>}
 
-      {!isFinished && isMyTurn && (
+      {!isFinished && (
         <div className={styles.actions}>
           {exchangeMode ? (
             <>
               <button
                 onClick={submitExchange}
-                disabled={exchangeSelection.size === 0 || submitting}
+                disabled={!isMyTurn || exchangeSelection.size === 0 || submitting}
                 className={styles.playButton}
               >
                 Exchange {exchangeSelection.size > 0 ? `(${exchangeSelection.size})` : ''}
               </button>
-              <button onClick={exitExchangeMode} className={styles.secondaryAction}>
+              <button onClick={exitExchangeMode} disabled={!isMyTurn} className={styles.secondaryAction}>
                 Cancel
               </button>
             </>
@@ -136,27 +136,27 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
             <>
               <button
                 onClick={submitMove}
-                disabled={tentativePlacements.length === 0 || submitting}
+                disabled={!isMyTurn || tentativePlacements.length === 0 || submitting}
                 className={styles.playButton}
               >
                 Play Word
               </button>
               {tentativePlacements.length > 0 && (
-                <button onClick={clearPlacements} className={styles.secondaryAction}>
+                <button onClick={clearPlacements} disabled={!isMyTurn} className={styles.secondaryAction}>
                   Clear
                 </button>
               )}
               <button
                 onClick={enterExchangeMode}
-                disabled={submitting || game.tilesRemaining === 0}
+                disabled={!isMyTurn || submitting || game.tilesRemaining === 0}
                 className={styles.secondaryAction}
               >
                 Exchange
               </button>
-              <button onClick={pass} disabled={submitting} className={styles.secondaryAction}>
+              <button onClick={pass} disabled={!isMyTurn || submitting} className={styles.secondaryAction}>
                 Pass
               </button>
-              <button onClick={() => { if (confirm('Are you sure you want to resign? This will count as a loss.')) resign(); }} className={styles.dangerAction}>
+              <button onClick={() => { if (confirm('Are you sure you want to resign? This will count as a loss.')) resign(); }} disabled={!isMyTurn} className={styles.dangerAction}>
                 Resign
               </button>
             </>
