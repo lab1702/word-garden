@@ -26,7 +26,7 @@ services:
       - "9000:3000"
     environment:
       DATABASE_URL: postgres://wordgarden:wordgarden_dev@db:5432/wordgarden
-      SESSION_SECRET: ${SESSION_SECRET:-dev-secret}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
       RP_ID: ${RP_ID:-localhost}
       RP_NAME: ${RP_NAME:-Word Garden}
       ORIGIN: ${ORIGIN:-http://localhost:9000}

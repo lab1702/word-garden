@@ -145,7 +145,7 @@ export async function sweepQueue(): Promise<void> {
             await client.query('COMMIT');
           }
         } catch (err) {
-          await client.query('ROLLBACK');
+          try { await client.query('ROLLBACK'); } catch { /* connection may be gone */ }
           console.error('sweepQueue error for user', entry.user_id, err);
         }
       }
