@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 import pool from '../db/pool.js';
-import { sendEvent } from './sse.js';
+import { sendEvent, broadcastLobbyStats } from './sse.js';
 import { initializeGame, drawTilesForPlayer2 } from './gameEngine.js';
 
 export async function enterQueue(userId: string, rating: number, ratingDeviation: number): Promise<{ matched: boolean; gameId?: string; busy?: boolean }> {
@@ -75,6 +75,8 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
       sendEvent(userId, 'match_found', { gameId: notification.gameId });
       sendEvent(notification.opponentId, 'match_found', { gameId: notification.gameId });
     }
+
+    broadcastLobbyStats();
   }
 }
 
@@ -161,10 +163,15 @@ export async function sweepQueue(): Promise<void> {
     sendEvent(userId, 'match_found', { gameId });
     sendEvent(opponentId, 'match_found', { gameId });
   }
+
+  if (notifications.length > 0) {
+    broadcastLobbyStats();
+  }
 }
 
 export async function leaveQueue(userId: string): Promise<void> {
   await pool.query('DELETE FROM matchmaking_queue WHERE user_id = $1', [userId]);
+  broadcastLobbyStats();
 }
 
 function generateInviteCode(): string {
