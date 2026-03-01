@@ -205,33 +205,35 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
       const tiles: TilePlacement[] = tentativePlacements.map(({ row, col, letter, isBlank }) => ({
         row, col, letter, isBlank,
       }));
-      await apiFetch(`/games/${gameId}/move`, {
+      const result = await apiFetch<{ gameOver: boolean }>(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify({ moveType: 'play', tiles }),
       });
       await loadGame();
+      if (result.gameOver) onGameFinished?.();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSubmitting(false);
     }
-  }, [game, gameId, tentativePlacements, loadGame]);
+  }, [game, gameId, tentativePlacements, loadGame, onGameFinished]);
 
   const pass = useCallback(async () => {
     setError('');
     setSubmitting(true);
     try {
-      await apiFetch(`/games/${gameId}/move`, {
+      const result = await apiFetch<{ gameOver: boolean }>(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify({ moveType: 'pass' }),
       });
       await loadGame();
+      if (result.gameOver) onGameFinished?.();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSubmitting(false);
     }
-  }, [gameId, loadGame]);
+  }, [gameId, loadGame, onGameFinished]);
 
   const exchangeTiles = useCallback(async (indices: number[]) => {
     setError('');
@@ -281,10 +283,11 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     try {
       await apiFetch(`/games/${gameId}/resign`, { method: 'POST' });
       await loadGame();
+      onGameFinished?.();
     } catch (err: any) {
       setError(err.message);
     }
-  }, [gameId, loadGame]);
+  }, [gameId, loadGame, onGameFinished]);
 
   return {
     game,
