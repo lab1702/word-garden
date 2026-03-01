@@ -203,13 +203,10 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
       const tiles: TilePlacement[] = tentativePlacements.map(({ row, col, letter, isBlank }) => ({
         row, col, letter, isBlank,
       }));
-      const result = await apiFetch<any>(`/games/${gameId}/move`, {
+      await apiFetch(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify({ moveType: 'play', tiles }),
       });
-      if (result.newRack) {
-        setRack(assignIds(result.newRack));
-      }
       await loadGame();
     } catch (err: any) {
       setError(err.message);
@@ -238,13 +235,10 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     setError('');
     setSubmitting(true);
     try {
-      const result = await apiFetch<any>(`/games/${gameId}/move`, {
+      await apiFetch(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify({ moveType: 'exchange', exchangeTiles: indices }),
       });
-      if (result.newRack) {
-        setRack(assignIds(result.newRack));
-      }
       await loadGame();
     } catch (err: any) {
       setError(err.message);
