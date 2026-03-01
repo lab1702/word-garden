@@ -2,14 +2,15 @@
   display: grid;
   grid-template-columns: repeat(15, 1fr);
   grid-template-rows: repeat(15, 1fr);
-  gap: 1px;
-  background: var(--color-board, #8B7355);
-  padding: 4px;
-  border-radius: 6px;
+  gap: 2px;
+  background: var(--color-board);
+  padding: 6px;
+  border-radius: var(--radius-md);
   aspect-ratio: 1;
   height: min(100%, 90vw, 560px);
   max-width: min(90vw, 560px);
   margin: 0 auto;
+  box-shadow: var(--shadow-lg);
 }
 
 .cell {
@@ -19,43 +20,45 @@
   background: var(--color-cell);
   aspect-ratio: 1;
   cursor: pointer;
-  border-radius: 1px;
-  transition: background 0.15s;
+  border-radius: 2px;
+  transition: background 150ms ease, box-shadow 150ms ease;
 }
 
 .cell:hover {
   background: var(--color-cell-hover);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .premiumDW {
-  background: var(--color-premium-dw, #E8B4B8);
+  background: linear-gradient(135deg, var(--color-premium-dw), color-mix(in srgb, var(--color-premium-dw), black 15%));
 }
 
 .premiumTW {
-  background: var(--color-premium-tw, #C75B5B);
+  background: linear-gradient(135deg, var(--color-premium-tw), color-mix(in srgb, var(--color-premium-tw), black 15%));
 }
 
 .premiumDL {
-  background: var(--color-premium-dl, #B8D4E8);
+  background: linear-gradient(135deg, var(--color-premium-dl), color-mix(in srgb, var(--color-premium-dl), black 15%));
 }
 
 .premiumTL {
-  background: var(--color-premium-tl, #5B8CC7);
+  background: linear-gradient(135deg, var(--color-premium-tl), color-mix(in srgb, var(--color-premium-tl), black 15%));
 }
 
 .premiumLabel {
   font-size: clamp(0.35rem, 1.3vw, 0.6rem);
   font-weight: bold;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: var(--font-mono, 'Courier New', monospace);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--font-mono);
   line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .lastMove {
-  box-shadow: inset 0 0 0 2px rgba(107, 142, 35, 0.5);
+  box-shadow: inset 0 0 0 2px rgba(127, 184, 54, 0.5);
 }
 
 .dropHover {
-  background: rgba(122, 171, 48, 0.3) !important;
-  box-shadow: inset 0 0 0 2px rgba(122, 171, 48, 0.6);
+  background: rgba(127, 184, 54, 0.3) !important;
+  box-shadow: inset 0 0 0 2px rgba(127, 184, 54, 0.6);
 }
