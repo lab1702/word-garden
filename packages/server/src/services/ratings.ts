@@ -1,7 +1,20 @@
 import { calculateNewRatings } from './glicko2.js';
 import type { PoolClient } from '../types.js';
 
-export async function updateRatings(client: PoolClient, player1Id: string | null, player2Id: string | null, winnerId: string | null) {
+export interface RatingChangeResult {
+  player1: { ratingBefore: number; ratingAfter: number; rankBefore: number; rankAfter: number };
+  player2: { ratingBefore: number; ratingAfter: number; rankBefore: number; rankAfter: number };
+}
+
+async function getPlayerRank(client: PoolClient, rating: number): Promise<number> {
+  const result = await client.query(
+    'SELECT COUNT(*) FROM users WHERE rating > $1 AND rating_deviation < 350',
+    [rating],
+  );
+  return parseInt(result.rows[0].count, 10) + 1;
+}
+
+export async function updateRatings(client: PoolClient, player1Id: string | null, player2Id: string | null, winnerId: string | null): Promise<RatingChangeResult | undefined> {
   if (player1Id == null || player2Id == null) return;
   // Lock user rows in consistent order to prevent deadlocks
   const [firstId, secondId] = player1Id < player2Id ? [player1Id, player2Id] : [player2Id, player1Id];
@@ -10,6 +23,14 @@ export async function updateRatings(client: PoolClient, player1Id: string | null
 
   const p1Data = first.rows[0].id === player1Id ? first.rows[0] : second.rows[0];
   const p2Data = first.rows[0].id === player1Id ? second.rows[0] : first.rows[0];
+
+  // Capture before ratings
+  const p1RatingBefore = p1Data.rating;
+  const p2RatingBefore = p2Data.rating;
+
+  // Compute ranks before update
+  const p1RankBefore = await getPlayerRank(client, p1RatingBefore);
+  const p2RankBefore = await getPlayerRank(client, p2RatingBefore);
 
   const outcome = winnerId === player1Id ? 1 : winnerId === player2Id ? -1 : 0;
   const newRatings = calculateNewRatings(
@@ -26,4 +47,13 @@ export async function updateRatings(client: PoolClient, player1Id: string | null
     'UPDATE users SET rating = $1, rating_deviation = $2, rating_volatility = $3 WHERE id = $4',
     [newRatings.player2.rating, newRatings.player2.deviation, newRatings.player2.volatility, player2Id],
   );
+
+  // Compute ranks after update
+  const p1RankAfter = await getPlayerRank(client, newRatings.player1.rating);
+  const p2RankAfter = await getPlayerRank(client, newRatings.player2.rating);
+
+  return {
+    player1: { ratingBefore: p1RatingBefore, ratingAfter: newRatings.player1.rating, rankBefore: p1RankBefore, rankAfter: p1RankAfter },
+    player2: { ratingBefore: p2RatingBefore, ratingAfter: newRatings.player2.rating, rankBefore: p2RankBefore, rankAfter: p2RankAfter },
+  };
 }
