@@ -167,6 +167,12 @@ export async function handlePassMove(
   let gameOver = newConsecutivePasses >= MAX_CONSECUTIVE_PASSES;
   let winnerId = null;
 
+  // Record move before game state changes to ensure audit trail
+  await client.query(
+    `INSERT INTO moves (game_id, player_id, move_type, score) VALUES ($1, $2, 'pass', 0)`,
+    [g.id, userId],
+  );
+
   if (gameOver) {
     // Deduct remaining tile points from each player
     const p1Rack: Tile[] = g.player1_rack;
@@ -191,11 +197,6 @@ export async function handlePassMove(
       [g.current_turn === 1 ? 2 : 1, newConsecutivePasses, g.id],
     );
   }
-
-  await client.query(
-    `INSERT INTO moves (game_id, player_id, move_type, score) VALUES ($1, $2, 'pass', 0)`,
-    [g.id, userId],
-  );
 
   const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
 
