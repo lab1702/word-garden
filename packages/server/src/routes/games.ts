@@ -268,6 +268,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       winnerId: g.winner_id,
       rack: isPlayer1 ? g.player1_rack : g.player2_rack,
       tilesRemaining: g.tile_bag.length,
+      opponentTileCount: (isPlayer1 ? g.player2_rack : g.player1_rack)?.length ?? 0,
       lastMove: lastMove ? {
         playerId: lastMove.player_id,
         moveType: lastMove.move_type,

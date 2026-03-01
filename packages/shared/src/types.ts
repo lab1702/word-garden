@@ -48,6 +48,7 @@ export interface PlayerGameView extends Omit<GameState, 'player1Id' | 'player2Id
   opponentUsername: string;
   rack: Tile[];
   tilesRemaining: number;
+  opponentTileCount: number;
   lastMove: MoveRecord | null;
 }
 

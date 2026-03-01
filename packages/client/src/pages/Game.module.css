@@ -71,6 +71,11 @@
   color: var(--color-gold);
 }
 
+.tileCount {
+  font-size: 0.7rem;
+  color: var(--color-text-dim);
+}
+
 .gameStatus {
   display: flex;
   flex-direction: column;

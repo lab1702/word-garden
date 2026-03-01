@@ -18,6 +18,7 @@ interface GameData {
   winnerId: string | null;
   rack: Tile[];
   tilesRemaining: number;
+  opponentTileCount: number;
   lastMove: {
     playerId: string | null;
     moveType: string;

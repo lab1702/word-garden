@@ -85,6 +85,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
         <div className={`${styles.playerScore} ${!isMyTurn && !isFinished ? styles.activePlayer : ''}`}>
           <span className={styles.playerLabel}>{game.opponentUsername || '?'}{game.opponentRating != null ? ` (${Math.round(game.opponentRating)})` : ''}</span>
           <span className={styles.scoreValue}>{opponentScore}</span>
+          {!isFinished && <span className={styles.tileCount}>{game.opponentTileCount} tiles</span>}
         </div>
       </div>
 
