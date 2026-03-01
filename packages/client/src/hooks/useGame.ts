@@ -48,7 +48,22 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     try {
       const data = await apiFetch<GameData>(`/games/${gameId}`);
       setGame(data);
-      setRack(assignIds(data.rack));
+      // Only replace rack if tiles actually changed (preserves player's reordering)
+      setRack(prev => {
+        if (prev.length !== data.rack.length) return assignIds(data.rack);
+        const prevCounts = new Map<string, number>();
+        for (const t of prev) {
+          const key = `${t.letter}:${t.points}`;
+          prevCounts.set(key, (prevCounts.get(key) ?? 0) + 1);
+        }
+        for (const t of data.rack) {
+          const key = `${t.letter}:${t.points}`;
+          const count = prevCounts.get(key);
+          if (count === undefined || count === 0) return assignIds(data.rack);
+          prevCounts.set(key, count - 1);
+        }
+        return prev;
+      });
       setTentativePlacements([]);
       setSelectedTileIndex(null);
       setExchangeMode(false);
