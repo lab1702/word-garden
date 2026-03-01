@@ -166,7 +166,9 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
 
       {isFinished && (
         <div className={styles.gameOverOverlay}>
-          <h2>{myScore > opponentScore ? 'You Won!' : myScore < opponentScore ? 'You Lost' : 'Draw'}</h2>
+          <h2 style={{ color: myScore > opponentScore ? 'var(--color-accent)' : myScore < opponentScore ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+            {myScore > opponentScore ? 'You Won!' : myScore < opponentScore ? 'You Lost' : 'Draw'}
+          </h2>
           <p>{myScore} - {opponentScore}</p>
           <button onClick={() => navigate('/')} className={styles.playButton}>
             Back to Lobby

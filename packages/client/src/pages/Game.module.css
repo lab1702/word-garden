@@ -1,7 +1,7 @@
 .gamePage {
   max-width: 600px;
   margin: 0 auto;
-  padding: 0.5rem;
+  padding: 0.5rem 1.5rem;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -20,7 +20,7 @@
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-family: var(--font-main, Georgia, serif);
+  font-family: var(--font-main);
   font-size: 0.9rem;
   cursor: pointer;
   padding: 0.25rem 0;
@@ -34,7 +34,7 @@
 .loading {
   text-align: center;
   padding: 2rem;
-  color: var(--color-text, #2C1810);
+  color: var(--color-text);
 }
 
 .scoreboard {
@@ -50,12 +50,12 @@
   flex-direction: column;
   align-items: center;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
-  transition: background 0.2s;
+  border-radius: var(--radius-md);
+  transition: background 150ms ease;
 }
 
 .activePlayer {
-  background: rgba(107, 142, 35, 0.1);
+  background: var(--color-accent-muted);
 }
 
 .playerLabel {
@@ -67,8 +67,8 @@
 .scoreValue {
   font-size: 1.5rem;
   font-weight: bold;
-  font-family: var(--font-mono, 'Courier New', monospace);
-  color: var(--color-text, #2C1810);
+  font-family: var(--font-mono);
+  color: var(--color-gold);
 }
 
 .gameStatus {
@@ -79,7 +79,7 @@
 }
 
 .yourTurn {
-  color: var(--color-accent, #6B8E23);
+  color: var(--color-accent);
   font-weight: bold;
   font-size: 0.875rem;
 }
@@ -91,7 +91,7 @@
 }
 
 .finished {
-  color: var(--color-text, #2C1810);
+  color: var(--color-text);
   font-weight: bold;
   font-size: 0.875rem;
 }
@@ -117,61 +117,86 @@
 
 .playButton {
   padding: 0.75rem 2rem;
-  background: var(--color-accent, #6B8E23);
+  background: var(--color-accent);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-family: var(--font-main, Georgia, serif);
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
   min-height: 44px;
+  box-shadow: var(--shadow-sm);
+}
+
+.playButton:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow-accent);
 }
 
 .playButton:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  filter: saturate(0.3);
+  transform: none;
+  box-shadow: none;
 }
 
 .secondaryAction {
   padding: 0.75rem 1.5rem;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-family: var(--font-main, Georgia, serif);
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
   cursor: pointer;
-  color: var(--color-text, #2C1810);
+  color: var(--color-text);
   min-height: 44px;
+}
+
+.secondaryAction:hover {
+  background: var(--color-surface-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .dangerAction {
   padding: 0.75rem 1.5rem;
   background: transparent;
-  border: 1px solid var(--color-danger);
-  border-radius: 8px;
-  font-family: var(--font-main, Georgia, serif);
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 40%);
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
   cursor: pointer;
-  color: var(--color-danger);
+  color: color-mix(in srgb, var(--color-danger), var(--color-text-muted) 30%);
   min-height: 44px;
+}
+
+.dangerAction:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: rgba(212, 88, 88, 0.1);
+  transform: translateY(-1px);
 }
 
 .gameOverOverlay {
   text-align: center;
   margin-top: 1.5rem;
   padding: 1.5rem;
-  background: var(--color-surface);
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
 }
 
 .gameOverOverlay h2 {
-  font-family: var(--font-main, Georgia, serif);
-  color: var(--color-text, #2C1810);
+  font-family: var(--font-main);
+  color: var(--color-text);
   margin: 0 0 0.5rem;
 }
 
 .gameOverOverlay p {
-  font-family: var(--font-mono, 'Courier New', monospace);
+  font-family: var(--font-mono);
   font-size: 1.5rem;
+  color: var(--color-gold);
   margin: 0 0 1rem;
 }
