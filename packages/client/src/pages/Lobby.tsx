@@ -87,8 +87,14 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
     }
   };
 
+  const INVITE_CODE_RE = /^GARDEN-[A-HJ-NP-Z2-9]{6}$/;
+
   const joinGame = async () => {
     setError('');
+    if (!INVITE_CODE_RE.test(joinCode)) {
+      setError('Invalid invite code format');
+      return;
+    }
     try {
       const result = await apiFetch<{ id: string }>(`/games/join/${joinCode}`, { method: 'POST' });
       navigate(`/game/${result.id}`);
