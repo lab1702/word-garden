@@ -19,6 +19,9 @@ export async function handlePlayMove(
 ): Promise<PlayResult | ErrorResult> {
   const isPlayer1 = g.player1_id === userId;
   const isPlayer2 = g.player2_id === userId;
+  if (g.player1_id == null || g.player2_id == null) {
+    return { type: 'error', status: 409, error: 'Game is no longer valid' };
+  }
   const board = g.board_state.map((row: any[]) => row.map((cell: any) => ({ ...cell, tile: cell.tile ? { ...cell.tile } : null })));
   const rack: Tile[] = isPlayer1 ? g.player1_rack : g.player2_rack;
   const tileBag: Tile[] = [...g.tile_bag];
@@ -133,10 +136,10 @@ export async function handlePlayMove(
   );
 
   if (gameOver) {
-    await updateRatings(client, g.player1_id!, g.player2_id!, winnerId);
+    await updateRatings(client, g.player1_id, g.player2_id, winnerId);
   }
 
-  const opponentId = isPlayer1 ? g.player2_id! : g.player1_id!;
+  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
 
   return {
     type: 'success',
@@ -155,6 +158,9 @@ export async function handlePassMove(
   userId: string,
 ): Promise<PassResult | ErrorResult> {
   const isPlayer1 = g.player1_id === userId;
+  if (g.player1_id == null || g.player2_id == null) {
+    return { type: 'error', status: 409, error: 'Game is no longer valid' };
+  }
 
   const newConsecutivePasses = g.consecutive_passes + 1;
   let gameOver = newConsecutivePasses >= MAX_CONSECUTIVE_PASSES;
@@ -176,7 +182,7 @@ export async function handlePassMove(
        WHERE id = $6`,
       [g.current_turn === 1 ? 2 : 1, newConsecutivePasses, p1Score, p2Score, winnerId, g.id],
     );
-    await updateRatings(client, g.player1_id!, g.player2_id!, winnerId);
+    await updateRatings(client, g.player1_id, g.player2_id, winnerId);
   } else {
     await client.query(
       `UPDATE games SET current_turn = $1, consecutive_passes = $2, updated_at = NOW() WHERE id = $3`,
@@ -189,7 +195,7 @@ export async function handlePassMove(
     [g.id, userId],
   );
 
-  const opponentId = isPlayer1 ? g.player2_id! : g.player1_id!;
+  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
 
   return {
     type: 'success',
@@ -205,6 +211,9 @@ export async function handleExchangeMove(
   exchangeTiles: number[] | undefined,
 ): Promise<ExchangeResult | ErrorResult> {
   const isPlayer1 = g.player1_id === userId;
+  if (g.player1_id == null || g.player2_id == null) {
+    return { type: 'error', status: 409, error: 'Game is no longer valid' };
+  }
   const rack: Tile[] = isPlayer1 ? g.player1_rack : g.player2_rack;
   const tileBag: Tile[] = [...g.tile_bag];
 
@@ -251,7 +260,7 @@ export async function handleExchangeMove(
     [g.id, userId],
   );
 
-  const opponentId = isPlayer1 ? g.player2_id! : g.player1_id!;
+  const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
 
   return {
     type: 'success',

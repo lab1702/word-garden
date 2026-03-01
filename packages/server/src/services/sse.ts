@@ -36,6 +36,7 @@ export function addClient(userId: string, res: Response): void {
 }
 
 export function sendEvent(userId: string, event: string, data: unknown): void {
+  if (/[\r\n]/.test(event)) throw new Error('Invalid SSE event name');
   const userClients = clients.get(userId);
   if (!userClients) return;
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -69,6 +70,7 @@ export function closeAllConnections(): void {
 }
 
 export function broadcastEvent(event: string, data: unknown): void {
+  if (/[\r\n]/.test(event)) throw new Error('Invalid SSE event name');
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const [userId, userClients] of clients) {
     for (const res of [...userClients]) {

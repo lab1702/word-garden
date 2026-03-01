@@ -46,6 +46,20 @@ describe('moveHandlers', () => {
   });
 
   describe('handlePlayMove', () => {
+    it('returns error when player1_id is null', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ player1_id: null });
+      const result = await handlePlayMove(client, g, 'user-2', [{ row: 7, col: 7, letter: 'A', isBlank: false }]);
+      expect(result).toEqual({ type: 'error', status: 409, error: 'Game is no longer valid' });
+    });
+
+    it('returns error when player2_id is null', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ player2_id: null });
+      const result = await handlePlayMove(client, g, 'user-1', [{ row: 7, col: 7, letter: 'A', isBlank: false }]);
+      expect(result).toEqual({ type: 'error', status: 409, error: 'Game is no longer valid' });
+    });
+
     it('returns error for undefined tiles', async () => {
       const client = makeMockClient();
       const g = makeGameRow();
@@ -152,6 +166,13 @@ describe('moveHandlers', () => {
   });
 
   describe('handleExchangeMove', () => {
+    it('returns error when player2_id is null', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ player2_id: null });
+      const result = await handleExchangeMove(client, g, 'user-1', [0]);
+      expect(result).toEqual({ type: 'error', status: 409, error: 'Game is no longer valid' });
+    });
+
     it('returns error for undefined exchange tiles', async () => {
       const client = makeMockClient();
       const g = makeGameRow();
@@ -205,6 +226,13 @@ describe('moveHandlers', () => {
   });
 
   describe('handlePassMove', () => {
+    it('returns error when player1_id is null', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ player1_id: null });
+      const result = await handlePassMove(client, g, 'user-2');
+      expect(result).toEqual({ type: 'error', status: 409, error: 'Game is no longer valid' });
+    });
+
     it('calls client.query for pass move', async () => {
       const client = makeMockClient();
       const g = makeGameRow();

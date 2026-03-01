@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 let addClient: typeof import('../sse.js').addClient;
 let sendEvent: typeof import('../sse.js').sendEvent;
+let broadcastEvent: typeof import('../sse.js').broadcastEvent;
 let disconnectUser: typeof import('../sse.js').disconnectUser;
 let closeAllConnections: typeof import('../sse.js').closeAllConnections;
 let isAtCapacity: typeof import('../sse.js').isAtCapacity;
@@ -20,6 +21,7 @@ describe('sse', () => {
     const mod = await import('../sse.js');
     addClient = mod.addClient;
     sendEvent = mod.sendEvent;
+    broadcastEvent = mod.broadcastEvent;
     disconnectUser = mod.disconnectUser;
     closeAllConnections = mod.closeAllConnections;
     isAtCapacity = mod.isAtCapacity;
@@ -90,5 +92,17 @@ describe('sse', () => {
     addClient('user-2', mockResponse());
     closeAllConnections();
     expect(isAtCapacity()).toBe(false);
+  });
+
+  it('sendEvent rejects event names with newlines', () => {
+    expect(() => sendEvent('user-1', 'bad\nevent', {})).toThrow('Invalid SSE event name');
+  });
+
+  it('sendEvent rejects event names with carriage returns', () => {
+    expect(() => sendEvent('user-1', 'bad\revent', {})).toThrow('Invalid SSE event name');
+  });
+
+  it('broadcastEvent rejects event names with newlines', () => {
+    expect(() => broadcastEvent('bad\nevent', {})).toThrow('Invalid SSE event name');
   });
 });

@@ -1,7 +1,8 @@
 import { calculateNewRatings } from './glicko2.js';
 import type { PoolClient } from '../types.js';
 
-export async function updateRatings(client: PoolClient, player1Id: string, player2Id: string, winnerId: string | null) {
+export async function updateRatings(client: PoolClient, player1Id: string | null, player2Id: string | null, winnerId: string | null) {
+  if (player1Id == null || player2Id == null) return;
   // Lock user rows in consistent order to prevent deadlocks
   const [firstId, secondId] = player1Id < player2Id ? [player1Id, player2Id] : [player2Id, player1Id];
   const first = await client.query('SELECT id, rating, rating_deviation, rating_volatility FROM users WHERE id = $1 FOR UPDATE', [firstId]);

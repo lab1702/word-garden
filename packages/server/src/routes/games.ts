@@ -419,6 +419,12 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
       return;
     }
 
+    if (g.player1_id == null || g.player2_id == null) {
+      await client.query('ROLLBACK');
+      res.status(409).json({ error: 'Game is no longer valid' });
+      return;
+    }
+
     const winnerId = isPlayer1 ? g.player2_id : g.player1_id;
 
     await client.query(
@@ -429,8 +435,10 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
     await client.query('COMMIT');
 
     const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
-    try { sendEvent(opponentId, 'game_finished', { gameId: g.id }); }
-    catch (e) { console.error('SSE notification failed:', e); }
+    if (opponentId) {
+      try { sendEvent(opponentId, 'game_finished', { gameId: g.id }); }
+      catch (e) { console.error('SSE notification failed:', e); }
+    }
     try { broadcastEvent('leaderboard_updated', {}); } catch {}
     res.json({ ok: true });
     return;

@@ -1,3 +1,8 @@
+-- NOTE: The CASCADE behavior for games.player1_id, games.player2_id, and
+-- moves.player_id is superseded by migration 006 (ON DELETE SET NULL).
+-- This migration still applies to matchmaking_queue.user_id (CASCADE).
+--
+-- Original description:
 -- Allow deleting a user to cascade-delete all their games, moves, and queue entries
 
 ALTER TABLE games DROP CONSTRAINT games_player1_id_fkey;
