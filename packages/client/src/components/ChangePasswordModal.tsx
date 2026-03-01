@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styles from './ChangePasswordModal.module.css';
 
 interface ChangePasswordModalProps {
@@ -13,6 +13,12 @@ export function ChangePasswordModal({ onSubmit, onClose }: ChangePasswordModalPr
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    return () => { clearTimeout(timerRef.current); };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 8) {
@@ -24,7 +30,7 @@ export function ChangePasswordModal({ onSubmit, onClose }: ChangePasswordModalPr
     try {
       await onSubmit(currentPassword, newPassword);
       setSuccess(true);
-      setTimeout(onClose, 1500);
+      timerRef.current = setTimeout(onClose, 1500);
     } catch (err: any) {
       setError(err.message || 'Failed to change password');
     } finally {
@@ -44,6 +50,7 @@ export function ChangePasswordModal({ onSubmit, onClose }: ChangePasswordModalPr
             onChange={(e) => setCurrentPassword(e.target.value)}
             className={styles.input}
             autoFocus
+            autoComplete="current-password"
           />
           <input
             type="password"
@@ -51,6 +58,7 @@ export function ChangePasswordModal({ onSubmit, onClose }: ChangePasswordModalPr
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className={styles.input}
+            autoComplete="new-password"
           />
           {error && <p className={styles.error}>{error}</p>}
           {success && <p className={styles.success}>Password changed successfully</p>}
