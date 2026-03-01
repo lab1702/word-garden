@@ -17,7 +17,7 @@ router.use(leaderboardLimiter);
 router.get('/', async (_req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, username, rating
+      `SELECT username, rating
        FROM users
        WHERE rating_deviation < 350
        ORDER BY rating DESC
@@ -25,7 +25,6 @@ router.get('/', async (_req, res) => {
     );
     const leaderboard = result.rows.map((row, i) => ({
       rank: i + 1,
-      userId: row.id,
       username: row.username,
       rating: Math.round(row.rating),
     }));
