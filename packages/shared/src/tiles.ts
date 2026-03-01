@@ -49,6 +49,11 @@ export function createTileBag(): Tile[] {
   return bag;
 }
 
+/**
+ * Client-only cosmetic shuffle using Math.random().
+ * NOT cryptographically secure — do NOT use for game-critical randomness.
+ * The server uses secureShuffleBag (crypto.randomInt) in gameEngine.ts.
+ */
 export function shuffleBag(bag: Tile[]): Tile[] {
   const shuffled = [...bag];
   for (let i = shuffled.length - 1; i > 0; i--) {
