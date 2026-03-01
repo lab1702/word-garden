@@ -23,6 +23,13 @@ const PREMIUM_LABELS: Record<string, string> = {
   DL: 'DL',
 };
 
+const PREMIUM_ARIA: Record<string, string> = {
+  TW: 'Triple Word',
+  DW: 'Double Word',
+  TL: 'Triple Letter',
+  DL: 'Double Letter',
+};
+
 function getCellFromPointer(e: React.PointerEvent, boardEl: HTMLDivElement): { row: number; col: number } | null {
   const rect = boardEl.getBoundingClientRect();
   const style = getComputedStyle(boardEl);
@@ -99,6 +106,8 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
     <div
       ref={boardRef}
       className={styles.board}
+      role="grid"
+      aria-label="Game board"
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
@@ -111,11 +120,21 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
           const isCenter = r === CENTER && c === CENTER;
           const isHovered = hoverCell?.row === r && hoverCell?.col === c;
 
+          const ariaLabel = cell.tile
+            ? `${cell.tile.letter}, row ${r + 1}, column ${c + 1}`
+            : tentative
+              ? `${tentative.letter} (tentative), row ${r + 1}, column ${c + 1}`
+              : cell.premium
+                ? `Empty, ${PREMIUM_ARIA[cell.premium]}, row ${r + 1}, column ${c + 1}`
+                : `Empty, row ${r + 1}, column ${c + 1}`;
+
           return (
             <div
               key={`${r}-${c}`}
               data-row={r}
               data-col={c}
+              role="gridcell"
+              aria-label={ariaLabel}
               className={`${styles.cell} ${premiumClass} ${isHovered ? styles.dropHover : ''}`}
               onClick={() => onCellClick(r, c)}
             >

@@ -39,8 +39,8 @@ export function ChangePasswordModal({ onSubmit, onClose }: ChangePasswordModalPr
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={onClose} onKeyDown={e => { if (e.key === 'Escape') onClose(); }}>
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Change password" onClick={(e) => e.stopPropagation()}>
         <h2 className={styles.title}>Change Password</h2>
         <form className={styles.form} onSubmit={handleSubmit}>
           <input

@@ -9,8 +9,8 @@ interface BlankTilePickerProps {
 
 export function BlankTilePicker({ onSelect, onCancel }: BlankTilePickerProps) {
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.picker} onClick={e => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={onCancel} onKeyDown={e => { if (e.key === 'Escape') onCancel(); }}>
+      <div className={styles.picker} role="dialog" aria-modal="true" aria-label="Choose a letter for blank tile" onClick={e => e.stopPropagation()}>
         <h3>Choose a letter for blank tile</h3>
         <div className={styles.letters}>
           {LETTERS.map(letter => (

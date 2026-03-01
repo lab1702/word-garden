@@ -6,6 +6,8 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   if (options?.body) {
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
   }
+  // CSRF defense-in-depth: custom header blocks cross-origin form submissions
+  headers['X-Requested-With'] = 'XMLHttpRequest';
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     credentials: 'include',

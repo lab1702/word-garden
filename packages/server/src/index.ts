@@ -1,6 +1,7 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
@@ -41,6 +42,17 @@ app.use((_req, res, next) => {
   next();
 });
 
+// CSRF defense-in-depth: require X-Requested-With on mutation requests.
+// Cross-origin form submissions and simple CORS requests cannot set custom headers.
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+  if (req.headers['x-requested-with'] !== 'XMLHttpRequest') {
+    res.status(403).json({ error: 'Missing required header' });
+    return;
+  }
+  next();
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
@@ -50,7 +62,15 @@ app.use('/api/games', gameRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 
 // SSE endpoint
-app.get('/api/events', requireAuth, (req, res) => {
+const sseLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 connection attempts per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many connection attempts, please try again later' },
+});
+
+app.get('/api/events', sseLimiter, requireAuth, (req, res) => {
   if (isAtCapacity()) {
     res.status(503).json({ error: 'Too many connections' });
     return;
