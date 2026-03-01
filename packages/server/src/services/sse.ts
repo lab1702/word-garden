@@ -60,6 +60,7 @@ export function disconnectUser(userId: string): void {
     try { res.end(); } catch { /* already closed */ }
   }
   clients.delete(userId);
+  broadcastLobbyStats();
 }
 
 export function closeAllConnections(): void {

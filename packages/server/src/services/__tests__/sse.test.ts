@@ -97,6 +97,33 @@ describe('sse', () => {
     expect(isAtCapacity()).toBe(false);
   });
 
+  it('disconnectUser broadcasts updated lobby stats', async () => {
+    const { default: pool } = await import('../../db/pool.js');
+    (pool.query as any).mockResolvedValue({ rows: [{ count: 0 }] });
+
+    const r1 = mockResponse();
+    const r2 = mockResponse();
+    addClient('user-1', r1);
+    addClient('user-2', r2);
+
+    // Wait for the addClient broadcast to flush
+    await vi.waitFor(() => {
+      expect(r2.write).toHaveBeenCalledWith(
+        expect.stringContaining('"onlinePlayers":2')
+      );
+    }, { timeout: 1000 });
+
+    r2.write.mockClear();
+
+    disconnectUser('user-1');
+
+    await vi.waitFor(() => {
+      expect(r2.write).toHaveBeenCalledWith(
+        expect.stringContaining('"onlinePlayers":1')
+      );
+    }, { timeout: 1000 });
+  });
+
   it('closeAllConnections resets global count', () => {
     addClient('user-1', mockResponse());
     addClient('user-2', mockResponse());
