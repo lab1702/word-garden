@@ -52,7 +52,7 @@ export interface PlayerGameView extends Omit<GameState, 'player1Id' | 'player2Id
 }
 
 export interface MoveRecord {
-  playerId: string;
+  playerId: string | null;
   moveType: MoveType;
   tilesPlaced: TilePlacement[];
   wordsFormed: { word: string; score: number }[];

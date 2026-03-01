@@ -19,7 +19,7 @@ interface GameData {
   rack: Tile[];
   tilesRemaining: number;
   lastMove: {
-    playerId: string;
+    playerId: string | null;
     moveType: string;
     tilesPlaced: TilePlacement[];
     wordsFormed: { word: string; score: number }[];

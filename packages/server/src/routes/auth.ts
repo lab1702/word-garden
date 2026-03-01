@@ -407,6 +407,8 @@ router.delete('/account', requireAuth, async (req, res) => {
       [userId],
     );
 
+    const notifications: { opponentId: string; gameId: string }[] = [];
+
     for (const g of activeGames.rows) {
       const isPlayer1 = g.player1_id === userId;
       const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
@@ -419,12 +421,7 @@ router.delete('/account', requireAuth, async (req, res) => {
 
       await updateRatings(client, g.player1_id, g.player2_id, winnerId);
 
-      // Notify opponent
-      try { sendEvent(opponentId, 'game_finished', { gameId: g.id }); } catch {}
-    }
-
-    if (activeGames.rows.length > 0) {
-      try { broadcastEvent('leaderboard_updated', {}); } catch {}
+      if (opponentId) notifications.push({ opponentId, gameId: g.id });
     }
 
     // Delete waiting games (no opponent to preserve them for)
@@ -439,6 +436,14 @@ router.delete('/account', requireAuth, async (req, res) => {
     }
 
     await client.query('COMMIT');
+
+    // Send notifications after commit to avoid notifying about uncommitted state
+    for (const n of notifications) {
+      try { sendEvent(n.opponentId, 'game_finished', { gameId: n.gameId }); } catch {}
+    }
+    if (notifications.length > 0) {
+      try { broadcastEvent('leaderboard_updated', {}); } catch {}
+    }
 
     disconnectUser(userId);
     invalidateTokenVersion(userId);
