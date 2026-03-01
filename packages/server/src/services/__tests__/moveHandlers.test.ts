@@ -124,6 +124,24 @@ describe('moveHandlers', () => {
       expect(result).toEqual({ type: 'error', status: 400, error: 'Invalid tile placement data' });
     });
 
+    it('succeeds for a valid first word at center', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow();
+      const tiles: TilePlacement[] = [
+        { row: 7, col: 7, letter: 'A', isBlank: false },
+        { row: 7, col: 8, letter: 'B', isBlank: false },
+      ];
+      const result = await handlePlayMove(client, g, 'user-1', tiles);
+      expect(result.type).toBe('success');
+      if (result.type !== 'success') return;
+      expect(result.score).toBeGreaterThan(0);
+      expect(result.wordScores).toHaveLength(1);
+      expect(result.wordScores[0].word).toBe('AB');
+      expect(result.gameOver).toBe(false);
+      expect(result.opponentId).toBe('user-2');
+      expect(result.newRack).toHaveLength(7);
+    });
+
     it('does not mutate the original game board', async () => {
       const client = makeMockClient();
       const g = makeGameRow();
