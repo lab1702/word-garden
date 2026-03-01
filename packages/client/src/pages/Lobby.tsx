@@ -18,7 +18,6 @@ interface GameSummary {
 
 interface LeaderboardEntry {
   rank: number;
-  userId: string;
   username: string;
   rating: number;
 }
@@ -143,8 +142,8 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
               <ol className={styles.leaderboardList}>
                 {leaderboard.map(entry => (
                   <li
-                    key={entry.userId}
-                    className={`${styles.leaderboardEntry} ${entry.userId === userId ? styles.leaderboardSelf : ''}`}
+                    key={entry.username}
+                    className={`${styles.leaderboardEntry} ${entry.username === username ? styles.leaderboardSelf : ''}`}
                   >
                     <span className={styles.leaderboardRank}>#{entry.rank}</span>
                     <span className={styles.leaderboardName}>{entry.username}</span>
