@@ -250,3 +250,9 @@
   color: var(--color-text-muted);
   font-size: 0.8rem;
 }
+
+@media (min-width: 700px) and (min-height: 700px) {
+  .gamePage {
+    max-width: min(85dvh, 960px);
+  }
+}

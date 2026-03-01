@@ -17,8 +17,8 @@
 }
 
 .rackSlot {
-  width: clamp(36px, 8vw, 52px);
-  height: clamp(36px, 8vw, 52px);
+  width: clamp(36px, 8vw, 72px);
+  height: clamp(36px, 8vw, 72px);
 }
 
 .lifting {

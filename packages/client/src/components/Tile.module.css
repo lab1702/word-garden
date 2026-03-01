@@ -45,7 +45,7 @@
 .letter {
   font-family: var(--font-main);
   font-weight: bold;
-  font-size: clamp(0.6rem, 2.5vw, 1.25rem);
+  font-size: clamp(0.6rem, 2.5vw, 1.75rem);
   color: var(--color-tile-text);
   line-height: 1;
 }
@@ -54,7 +54,7 @@
   position: absolute;
   bottom: 1px;
   right: 2px;
-  font-size: clamp(0.35rem, 1.2vw, 0.6rem);
+  font-size: clamp(0.35rem, 1.2vw, 0.75rem);
   color: var(--color-tile-text);
   font-family: var(--font-mono);
   line-height: 1;

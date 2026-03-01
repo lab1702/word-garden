@@ -7,8 +7,8 @@
   padding: 6px;
   border-radius: var(--radius-md);
   aspect-ratio: 1;
-  height: min(100%, 90vw, 560px);
-  max-width: min(90vw, 560px);
+  height: min(100%, 90vw);
+  max-width: 90vw;
   margin: 0 auto;
   box-shadow: var(--shadow-lg);
 }
@@ -46,7 +46,7 @@
 }
 
 .premiumLabel {
-  font-size: clamp(0.35rem, 1.3vw, 0.6rem);
+  font-size: clamp(0.35rem, 1.3vw, 0.75rem);
   font-weight: bold;
   color: rgba(255, 255, 255, 0.75);
   font-family: var(--font-mono);
