@@ -181,7 +181,7 @@ router.get('/', requireAuth, async (req, res) => {
               u1.username as player1_username, u1.rating as player1_rating,
               u2.username as player2_username, u2.rating as player2_rating
        FROM games g
-       JOIN users u1 ON g.player1_id = u1.id
+       LEFT JOIN users u1 ON g.player1_id = u1.id
        LEFT JOIN users u2 ON g.player2_id = u2.id
        WHERE g.player1_id = $1 OR g.player2_id = $1
        ORDER BY g.updated_at DESC
@@ -193,8 +193,8 @@ router.get('/', requireAuth, async (req, res) => {
       const isPlayer1 = g.player1_id === userId;
       return {
         id: g.id,
-        opponentUsername: isPlayer1 ? g.player2_username : g.player1_username,
-        opponentRating: isPlayer1 ? g.player2_rating : g.player1_rating,
+        opponentUsername: isPlayer1 ? (g.player2_username ?? 'Deleted') : (g.player1_username ?? 'Deleted'),
+        opponentRating: isPlayer1 ? (g.player2_rating ?? null) : (g.player1_rating ?? null),
         playerScore: isPlayer1 ? g.player1_score : g.player2_score,
         opponentScore: isPlayer1 ? g.player2_score : g.player1_score,
         isYourTurn: g.status === 'active' && ((isPlayer1 && g.current_turn === 1) || (!isPlayer1 && g.current_turn === 2)),
@@ -224,7 +224,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       `SELECT g.*, u1.username as player1_username, u1.rating as player1_rating,
               u2.username as player2_username, u2.rating as player2_rating
        FROM games g
-       JOIN users u1 ON g.player1_id = u1.id
+       LEFT JOIN users u1 ON g.player1_id = u1.id
        LEFT JOIN users u2 ON g.player2_id = u2.id
        WHERE g.id = $1`,
       [gameId],
@@ -254,8 +254,8 @@ router.get('/:id', requireAuth, async (req, res) => {
     res.json({
       id: g.id,
       playerNumber: isPlayer1 ? 1 : 2,
-      opponentUsername: isPlayer1 ? g.player2_username : g.player1_username,
-      opponentRating: isPlayer1 ? g.player2_rating : g.player1_rating,
+      opponentUsername: isPlayer1 ? (g.player2_username ?? 'Deleted') : (g.player1_username ?? 'Deleted'),
+      opponentRating: isPlayer1 ? (g.player2_rating ?? null) : (g.player1_rating ?? null),
       board: g.board_state,
       currentTurn: g.current_turn,
       player1Score: g.player1_score,

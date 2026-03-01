@@ -408,7 +408,10 @@ router.delete('/account', requireAuth, async (req, res) => {
       try { broadcastEvent('leaderboard_updated', {}); } catch {}
     }
 
-    // Now delete the user (CASCADE handles remaining games/moves/credentials/queue)
+    // Delete waiting games (no opponent to preserve them for)
+    await client.query(`DELETE FROM games WHERE player1_id = $1 AND status = 'waiting'`, [userId]);
+
+    // Delete the user (SET NULL preserves finished games for opponents; CASCADE handles credentials/queue)
     const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING id', [userId]);
     if (result.rowCount === 0) {
       await client.query('ROLLBACK');
