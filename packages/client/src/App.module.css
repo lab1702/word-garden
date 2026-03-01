@@ -66,7 +66,7 @@
 
 .headerButtonDanger:hover {
   background: var(--color-danger);
-  color: var(--color-text);
+  color: #111;
 }
 
 .content {

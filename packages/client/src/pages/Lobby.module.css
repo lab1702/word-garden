@@ -68,7 +68,7 @@
 
 .actionButtonCancel {
   background: var(--color-danger);
-  color: var(--color-text);
+  color: #111;
 }
 
 .actionButtonCancel:hover {

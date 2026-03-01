@@ -28,14 +28,14 @@
   /* Text */
   --color-text: #eae7df;
   --color-text-muted: #9898b0;
-  --color-text-dim: #606078;
+  --color-text-dim: #8585a0;
 
   /* Borders & inputs */
   --color-border: #3a3a55;
   --color-input-border: #4a4a65;
 
   /* Semantic */
-  --color-danger: #d45858;
+  --color-danger: #e86464;
   --color-invite-bg: #1e2e1e;
 
   /* Shadows */

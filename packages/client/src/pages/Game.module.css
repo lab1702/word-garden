@@ -130,7 +130,7 @@
 .playButton {
   padding: 0.75rem 2rem;
   background: var(--color-accent);
-  color: white;
+  color: #111;
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-main);
