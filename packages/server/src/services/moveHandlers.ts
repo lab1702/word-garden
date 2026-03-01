@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { validatePlacement, findFormedWords, scoreMove } from './gameEngine.js';
 import { isValidWord } from './dictionary.js';
-import { updateRatings } from './ratings.js';
+import { updateRatings, storeRatingChanges } from './ratings.js';
 import { RACK_SIZE, LETTER_POINTS, MAX_CONSECUTIVE_PASSES, BOARD_SIZE } from '@word-garden/shared';
 import type { TilePlacement, Tile } from '@word-garden/shared';
 import type { PoolClient, GameRow } from '../types.js';
@@ -137,23 +137,7 @@ export async function handlePlayMove(
 
   if (gameOver) {
     const ratingChanges = await updateRatings(client, g.player1_id, g.player2_id, winnerId);
-    if (ratingChanges) {
-      await client.query(
-        `UPDATE games SET
-          player1_rating_before = $1, player1_rating_after = $2,
-          player1_rank_before = $3, player1_rank_after = $4,
-          player2_rating_before = $5, player2_rating_after = $6,
-          player2_rank_before = $7, player2_rank_after = $8
-        WHERE id = $9`,
-        [
-          ratingChanges.player1.ratingBefore, ratingChanges.player1.ratingAfter,
-          ratingChanges.player1.rankBefore, ratingChanges.player1.rankAfter,
-          ratingChanges.player2.ratingBefore, ratingChanges.player2.ratingAfter,
-          ratingChanges.player2.rankBefore, ratingChanges.player2.rankAfter,
-          g.id,
-        ],
-      );
-    }
+    if (ratingChanges) await storeRatingChanges(client, g.id, ratingChanges);
   }
 
   const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
@@ -200,23 +184,7 @@ export async function handlePassMove(
       [g.current_turn === 1 ? 2 : 1, newConsecutivePasses, p1Score, p2Score, winnerId, g.id],
     );
     const ratingChanges = await updateRatings(client, g.player1_id, g.player2_id, winnerId);
-    if (ratingChanges) {
-      await client.query(
-        `UPDATE games SET
-          player1_rating_before = $1, player1_rating_after = $2,
-          player1_rank_before = $3, player1_rank_after = $4,
-          player2_rating_before = $5, player2_rating_after = $6,
-          player2_rank_before = $7, player2_rank_after = $8
-        WHERE id = $9`,
-        [
-          ratingChanges.player1.ratingBefore, ratingChanges.player1.ratingAfter,
-          ratingChanges.player1.rankBefore, ratingChanges.player1.rankAfter,
-          ratingChanges.player2.ratingBefore, ratingChanges.player2.ratingAfter,
-          ratingChanges.player2.rankBefore, ratingChanges.player2.rankAfter,
-          g.id,
-        ],
-      );
-    }
+    if (ratingChanges) await storeRatingChanges(client, g.id, ratingChanges);
   } else {
     await client.query(
       `UPDATE games SET current_turn = $1, consecutive_passes = $2, updated_at = NOW() WHERE id = $3`,

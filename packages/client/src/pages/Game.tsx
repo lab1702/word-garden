@@ -200,34 +200,38 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
             {myScore > opponentScore ? 'You Won!' : myScore < opponentScore ? 'You Lost' : 'Draw'}
           </h2>
           <p>{myScore} - {opponentScore}</p>
-          {game.ratingChanges && (
-            <div className={styles.ratingChanges}>
-              <div className={styles.ratingRow}>
-                <span className={styles.ratingPlayer}>You</span>
-                <span className={styles.ratingValue}>{game.ratingChanges.me.ratingAfter}</span>
-                <span className={game.ratingChanges.me.ratingAfter >= game.ratingChanges.me.ratingBefore ? styles.ratingUp : styles.ratingDown}>
-                  {game.ratingChanges.me.ratingAfter >= game.ratingChanges.me.ratingBefore ? '+' : ''}{game.ratingChanges.me.ratingAfter - game.ratingChanges.me.ratingBefore}
-                </span>
-                {game.ratingChanges.me.rankBefore !== game.ratingChanges.me.rankAfter ? (
-                  <span className={styles.rankChange}>#{game.ratingChanges.me.rankBefore} → #{game.ratingChanges.me.rankAfter}</span>
-                ) : (
-                  <span className={styles.rankChange}>#{game.ratingChanges.me.rankAfter}</span>
-                )}
+          {game.ratingChanges && (() => {
+            const myDelta = game.ratingChanges.me.ratingAfter - game.ratingChanges.me.ratingBefore;
+            const oppDelta = game.ratingChanges.opponent.ratingAfter - game.ratingChanges.opponent.ratingBefore;
+            return (
+              <div className={styles.ratingChanges}>
+                <div className={styles.ratingRow}>
+                  <span className={styles.ratingPlayer}>You</span>
+                  <span className={styles.ratingValue}>{game.ratingChanges.me.ratingAfter}</span>
+                  <span className={myDelta >= 0 ? styles.ratingUp : styles.ratingDown}>
+                    {myDelta >= 0 ? '+' : ''}{myDelta}
+                  </span>
+                  {game.ratingChanges.me.rankBefore !== game.ratingChanges.me.rankAfter ? (
+                    <span className={styles.rankChange}>#{game.ratingChanges.me.rankBefore} → #{game.ratingChanges.me.rankAfter}</span>
+                  ) : (
+                    <span className={styles.rankChange}>#{game.ratingChanges.me.rankAfter}</span>
+                  )}
+                </div>
+                <div className={styles.ratingRow}>
+                  <span className={styles.ratingPlayer}>{game.opponentUsername}</span>
+                  <span className={styles.ratingValue}>{game.ratingChanges.opponent.ratingAfter}</span>
+                  <span className={oppDelta >= 0 ? styles.ratingUp : styles.ratingDown}>
+                    {oppDelta >= 0 ? '+' : ''}{oppDelta}
+                  </span>
+                  {game.ratingChanges.opponent.rankBefore !== game.ratingChanges.opponent.rankAfter ? (
+                    <span className={styles.rankChange}>#{game.ratingChanges.opponent.rankBefore} → #{game.ratingChanges.opponent.rankAfter}</span>
+                  ) : (
+                    <span className={styles.rankChange}>#{game.ratingChanges.opponent.rankAfter}</span>
+                  )}
+                </div>
               </div>
-              <div className={styles.ratingRow}>
-                <span className={styles.ratingPlayer}>{game.opponentUsername}</span>
-                <span className={styles.ratingValue}>{game.ratingChanges.opponent.ratingAfter}</span>
-                <span className={game.ratingChanges.opponent.ratingAfter >= game.ratingChanges.opponent.ratingBefore ? styles.ratingUp : styles.ratingDown}>
-                  {game.ratingChanges.opponent.ratingAfter >= game.ratingChanges.opponent.ratingBefore ? '+' : ''}{game.ratingChanges.opponent.ratingAfter - game.ratingChanges.opponent.ratingBefore}
-                </span>
-                {game.ratingChanges.opponent.rankBefore !== game.ratingChanges.opponent.rankAfter ? (
-                  <span className={styles.rankChange}>#{game.ratingChanges.opponent.rankBefore} → #{game.ratingChanges.opponent.rankAfter}</span>
-                ) : (
-                  <span className={styles.rankChange}>#{game.ratingChanges.opponent.rankAfter}</span>
-                )}
-              </div>
-            </div>
-          )}
+            );
+          })()}
           <button onClick={() => navigate('/')} className={styles.playButton}>
             Back to Lobby
           </button>

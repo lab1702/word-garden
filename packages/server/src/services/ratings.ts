@@ -57,3 +57,21 @@ export async function updateRatings(client: PoolClient, player1Id: string | null
     player2: { ratingBefore: p2RatingBefore, ratingAfter: newRatings.player2.rating, rankBefore: p2RankBefore, rankAfter: p2RankAfter },
   };
 }
+
+export async function storeRatingChanges(client: PoolClient, gameId: string, changes: RatingChangeResult): Promise<void> {
+  await client.query(
+    `UPDATE games SET
+      player1_rating_before = $1, player1_rating_after = $2,
+      player1_rank_before = $3, player1_rank_after = $4,
+      player2_rating_before = $5, player2_rating_after = $6,
+      player2_rank_before = $7, player2_rank_after = $8
+    WHERE id = $9`,
+    [
+      changes.player1.ratingBefore, changes.player1.ratingAfter,
+      changes.player1.rankBefore, changes.player1.rankAfter,
+      changes.player2.ratingBefore, changes.player2.ratingAfter,
+      changes.player2.rankBefore, changes.player2.rankAfter,
+      gameId,
+    ],
+  );
+}
