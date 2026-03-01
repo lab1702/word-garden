@@ -14,7 +14,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { containsProfanity } from '../services/profanityFilter.js';
 import { sendEvent, broadcastEvent, disconnectUser } from '../services/sse.js';
 import { invalidateTokenVersion } from '../services/tokenVersionCache.js';
-import { updateRatings } from '../services/ratings.js';
+import { updateRatings, storeRatingChanges } from '../services/ratings.js';
 import type { CookieOptions } from 'express';
 
 const router = Router();
@@ -419,7 +419,8 @@ router.delete('/account', requireAuth, async (req, res) => {
         [winnerId, g.id],
       );
 
-      await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+      const ratingChanges = await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+      if (ratingChanges) await storeRatingChanges(client, g.id, ratingChanges);
 
       if (opponentId) notifications.push({ opponentId, gameId: g.id });
     }

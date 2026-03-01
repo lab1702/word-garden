@@ -300,11 +300,27 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
   }, []);
 
   const submitExchange = useCallback(async () => {
-    if (exchangeSelection.size === 0) return;
-    await exchangeTiles([...exchangeSelection]);
+    if (exchangeSelection.size === 0 || !game) return;
+    // Map local rack indices to server-side rack indices.
+    // The local rack may have been reordered via drag-and-drop or shuffle,
+    // so local indices can differ from the server's rack order.
+    const serverRack = game.rack;
+    const usedServerIndices = new Set<number>();
+    const serverIndices: number[] = [];
+    for (const localIdx of exchangeSelection) {
+      const tile = rack[localIdx];
+      const serverIdx = serverRack.findIndex(
+        (t, i) => !usedServerIndices.has(i) && t.letter === tile.letter && t.points === tile.points,
+      );
+      if (serverIdx !== -1) {
+        serverIndices.push(serverIdx);
+        usedServerIndices.add(serverIdx);
+      }
+    }
+    await exchangeTiles(serverIndices);
     setExchangeMode(false);
     setExchangeSelection(new Set());
-  }, [exchangeSelection, exchangeTiles]);
+  }, [exchangeSelection, exchangeTiles, rack, game]);
 
   const resign = useCallback(async () => {
     setError('');
