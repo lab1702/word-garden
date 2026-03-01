@@ -32,6 +32,19 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
       if (matchResult.rows.length > 0) {
         const opponent = matchResult.rows[0];
 
+        // Skip if these players already have an active game against each other
+        const existingGame = await client.query(
+          `SELECT 1 FROM games WHERE status = 'active'
+           AND ((player1_id = $1 AND player2_id = $2) OR (player1_id = $2 AND player2_id = $1))
+           LIMIT 1`,
+          [userId, opponent.user_id],
+        );
+        if (existingGame.rows.length > 0) {
+          // Don't match — leave both in queue for other opponents
+          await client.query('COMMIT');
+          return { matched: false };
+        }
+
         // Remove opponent from queue
         await client.query('DELETE FROM matchmaking_queue WHERE id = $1', [opponent.id]);
         // Remove self from queue if present
@@ -119,6 +132,18 @@ export async function sweepQueue(): Promise<void> {
 
           if (matchResult.rows.length > 0) {
             const opponent = matchResult.rows[0];
+
+            // Skip if these players already have an active game against each other
+            const existingGame = await client.query(
+              `SELECT 1 FROM games WHERE status = 'active'
+               AND ((player1_id = $1 AND player2_id = $2) OR (player1_id = $2 AND player2_id = $1))
+               LIMIT 1`,
+              [entry.user_id, opponent.user_id],
+            );
+            if (existingGame.rows.length > 0) {
+              await client.query('COMMIT');
+              continue;
+            }
 
             // Remove both from queue
             await client.query('DELETE FROM matchmaking_queue WHERE user_id = ANY($1::uuid[])', [
