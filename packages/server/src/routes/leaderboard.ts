@@ -14,17 +14,20 @@ const leaderboardLimiter = rateLimit({
 
 router.use(leaderboardLimiter);
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 10, 1), 50);
+    const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
     const result = await pool.query(
       `SELECT username, rating
        FROM users
        WHERE rating_deviation < 350
        ORDER BY rating DESC
-       LIMIT 10`
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
     );
     const leaderboard = result.rows.map((row, i) => ({
-      rank: i + 1,
+      rank: offset + i + 1,
       username: row.username,
       rating: Math.round(row.rating),
     }));
