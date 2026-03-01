@@ -1,24 +1,55 @@
 :root {
-  --color-bg: #1a1a2e;
-  --color-surface: #252540;
-  --color-surface-hover: #2e2e4a;
-  --color-board: #3a3520;
-  --color-cell: #2a2a40;
-  --color-cell-hover: #33334d;
-  --color-tile: #c4a35a;
-  --color-tile-text: #1a1a2e;
-  --color-premium-dw: #8c3a4d;
-  --color-premium-tw: #b83838;
-  --color-premium-dl: #355f85;
-  --color-premium-tl: #3562a8;
-  --color-accent: #7aab30;
-  --color-text: #e0ddd5;
-  --color-text-muted: #a0a0b8;
+  /* Background & surfaces */
+  --color-bg: #12121f;
+  --color-surface: #1c1c32;
+  --color-surface-raised: #252542;
+  --color-surface-hover: #2e2e4d;
+
+  /* Board */
+  --color-board: #342e18;
+  --color-cell: #22223a;
+  --color-cell-hover: #2c2c48;
+
+  /* Tiles */
+  --color-tile: #d4ad4e;
+  --color-tile-text: #12121f;
+
+  /* Premium squares */
+  --color-premium-dw: #9c3a50;
+  --color-premium-tw: #cc3535;
+  --color-premium-dl: #3a6a95;
+  --color-premium-tl: #3868b8;
+
+  /* Accent */
+  --color-accent: #7fb836;
+  --color-accent-muted: rgba(127, 184, 54, 0.12);
+  --color-gold: #d4ad4e;
+
+  /* Text */
+  --color-text: #eae7df;
+  --color-text-muted: #9898b0;
   --color-text-dim: #606078;
+
+  /* Borders & inputs */
   --color-border: #3a3a55;
   --color-input-border: #4a4a65;
-  --color-danger: #c75b5b;
+
+  /* Semantic */
+  --color-danger: #d45858;
   --color-invite-bg: #1e2e1e;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-glow-accent: 0 0 12px rgba(127, 184, 54, 0.2);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Typography */
   --font-main: 'Georgia', serif;
   --font-mono: 'Courier New', monospace;
 }
