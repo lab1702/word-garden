@@ -441,7 +441,24 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
       `UPDATE games SET status = 'finished', winner_id = $1, updated_at = NOW() WHERE id = $2`,
       [winnerId, g.id],
     );
-    await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+    const ratingChanges = await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+    if (ratingChanges) {
+      await client.query(
+        `UPDATE games SET
+          player1_rating_before = $1, player1_rating_after = $2,
+          player1_rank_before = $3, player1_rank_after = $4,
+          player2_rating_before = $5, player2_rating_after = $6,
+          player2_rank_before = $7, player2_rank_after = $8
+        WHERE id = $9`,
+        [
+          ratingChanges.player1.ratingBefore, ratingChanges.player1.ratingAfter,
+          ratingChanges.player1.rankBefore, ratingChanges.player1.rankAfter,
+          ratingChanges.player2.ratingBefore, ratingChanges.player2.ratingAfter,
+          ratingChanges.player2.rankBefore, ratingChanges.player2.rankAfter,
+          g.id,
+        ],
+      );
+    }
     await client.query('COMMIT');
 
     const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
