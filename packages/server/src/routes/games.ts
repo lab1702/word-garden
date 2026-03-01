@@ -183,7 +183,9 @@ router.get('/', requireAuth, async (req, res) => {
       `SELECT g.id, g.player1_id, g.player2_id, g.player1_score, g.player2_score,
               g.current_turn, g.status, g.updated_at, g.invite_code,
               u1.username as player1_username, u1.rating as player1_rating,
-              u2.username as player2_username, u2.rating as player2_rating
+              u2.username as player2_username, u2.rating as player2_rating,
+              g.player1_rating_before, g.player1_rating_after,
+              g.player2_rating_before, g.player2_rating_after
        FROM games g
        LEFT JOIN users u1 ON g.player1_id = u1.id
        LEFT JOIN users u2 ON g.player2_id = u2.id
@@ -205,6 +207,11 @@ router.get('/', requireAuth, async (req, res) => {
         status: g.status,
         inviteCode: g.status === 'waiting' ? g.invite_code : null,
         updatedAt: g.updated_at,
+        ratingDelta: g.status === 'finished' && isPlayer1 && g.player1_rating_after != null
+          ? Math.round(g.player1_rating_after - g.player1_rating_before)
+          : g.status === 'finished' && !isPlayer1 && g.player2_rating_after != null
+          ? Math.round(g.player2_rating_after - g.player2_rating_before)
+          : null,
       };
     });
 

@@ -14,6 +14,7 @@ interface GameSummary {
   status: string;
   inviteCode: string | null;
   updatedAt: string;
+  ratingDelta: number | null;
 }
 
 interface LeaderboardEntry {
@@ -249,9 +250,16 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
                     <span className={styles.opponent}>vs {g.opponentUsername}</span>
                     <span className={styles.score}>{g.playerScore} - {g.opponentScore}</span>
                   </div>
-                  <span className={styles.finished}>
-                    {g.playerScore > g.opponentScore ? 'Won' : g.playerScore < g.opponentScore ? 'Lost' : 'Draw'}
-                  </span>
+                  <div className={styles.finishedInfo}>
+                    <span className={styles.finished}>
+                      {g.playerScore > g.opponentScore ? 'Won' : g.playerScore < g.opponentScore ? 'Lost' : 'Draw'}
+                    </span>
+                    {g.ratingDelta != null && (
+                      <span className={g.ratingDelta >= 0 ? styles.ratingUp : styles.ratingDown}>
+                        {g.ratingDelta >= 0 ? '+' : ''}{g.ratingDelta}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </section>
