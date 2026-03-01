@@ -1,7 +1,7 @@
 .lobby {
   max-width: 600px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 .lobbyGrid {
@@ -31,7 +31,7 @@
   .lobbyGrid {
     display: grid;
     grid-template-columns: 1fr 1.2fr 1fr;
-    gap: 1.5rem;
+    gap: 2rem;
     align-items: start;
   }
 }
@@ -40,29 +40,42 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .actionButton,
 .actionButtonCancel {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1rem;
-  font-family: var(--font-main, Georgia, serif);
+  font-family: var(--font-main);
   cursor: pointer;
   min-height: 44px;
   border: none;
   font-weight: bold;
+  box-shadow: var(--shadow-sm);
 }
 
 .actionButton {
-  background: var(--color-accent, #6B8E23);
+  background: var(--color-accent);
   color: #111;
+}
+
+.actionButton:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .actionButtonCancel {
   background: var(--color-danger);
   color: var(--color-text);
+}
+
+.actionButtonCancel:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .joinRow {
@@ -74,28 +87,45 @@
   flex: 1;
   padding: 0.75rem 1rem;
   border: 2px solid var(--color-input-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1rem;
-  font-family: var(--font-mono, 'Courier New', monospace);
+  font-family: var(--font-mono);
   letter-spacing: 0.1em;
   background: var(--color-bg);
   color: var(--color-text);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.joinInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 3px var(--color-accent-muted);
 }
 
 .joinButton {
   padding: 0.75rem 1.5rem;
-  background: var(--color-accent, #6B8E23);
+  background: var(--color-accent);
   color: #111;
   border: none;
-  border-radius: 8px;
-  font-family: var(--font-main, Georgia, serif);
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
+  font-weight: bold;
   cursor: pointer;
   min-height: 44px;
+  box-shadow: var(--shadow-sm);
+}
+
+.joinButton:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .joinButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 .joinInput::placeholder {
@@ -105,21 +135,27 @@
 .inviteBox {
   background: var(--color-invite-bg);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-align: center;
   margin-bottom: 1rem;
-  font-family: var(--font-mono, 'Courier New', monospace);
+  font-family: var(--font-mono);
+  border: 1px solid var(--color-border);
 }
 
 .copyButton {
   margin-left: 0.75rem;
   padding: 0.25rem 0.75rem;
-  background: var(--color-accent, #6B8E23);
+  background: var(--color-accent);
   color: #111;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.copyButton:hover {
+  filter: brightness(1.1);
 }
 
 .error {
@@ -129,17 +165,18 @@
 
 .searching {
   text-align: center;
-  color: var(--color-accent, #6B8E23);
+  color: var(--color-accent);
   font-style: italic;
 }
 
 .sectionTitle {
-  font-family: var(--font-main, Georgia, serif);
-  color: var(--color-text, #2C1810);
-  font-size: 1.25rem;
-  margin: 1.5rem 0 0.75rem;
-  border-bottom: 2px solid var(--color-border);
+  font-family: var(--font-main);
+  color: var(--color-text);
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin: 2rem 0 1rem;
   padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 @media (min-width: 960px) {
@@ -153,12 +190,17 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: var(--color-surface);
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
   cursor: pointer;
-  transition: box-shadow 0.2s;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.gameCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .cancelGameButton {
@@ -166,10 +208,10 @@
   background: transparent;
   border: 1px solid var(--color-danger);
   color: var(--color-danger);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
-  font-family: var(--font-main, Georgia, serif);
+  font-family: var(--font-main);
 }
 
 .cancelGameButton:hover {
@@ -177,12 +219,20 @@
   color: #111;
 }
 
-.gameCard:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+.yourTurn {
+  border-left: 4px solid var(--color-accent);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
+  position: relative;
 }
 
-.yourTurn {
-  border-left: 4px solid var(--color-accent, #6B8E23);
+.yourTurn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-muted);
+  pointer-events: none;
 }
 
 .gameInfo {
@@ -193,17 +243,17 @@
 
 .opponent {
   font-weight: bold;
-  color: var(--color-text, #2C1810);
+  color: var(--color-text);
 }
 
 .score {
   color: var(--color-text-muted);
-  font-family: var(--font-mono, 'Courier New', monospace);
+  font-family: var(--font-mono);
 }
 
 .turnIndicator {
   font-size: 0.875rem;
-  color: var(--color-accent, #6B8E23);
+  color: var(--color-accent);
   font-weight: bold;
 }
 
@@ -226,23 +276,35 @@
   display: flex;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   gap: 0.75rem;
+  transition: background 150ms ease;
 }
 
 .leaderboardEntry:nth-child(odd) {
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.leaderboardEntry:nth-child(even) {
+  background: transparent;
 }
 
 .leaderboardSelf {
-  background: rgba(107, 142, 35, 0.15) !important;
+  background: rgba(127, 184, 54, 0.15) !important;
   font-weight: bold;
+  border-left: 3px solid var(--color-accent);
 }
 
 .leaderboardRank {
-  font-family: var(--font-mono, 'Courier New', monospace);
+  font-family: var(--font-mono);
   color: var(--color-text-muted);
   min-width: 2rem;
+}
+
+.leaderboardRankTop {
+  composes: leaderboardRank;
+  color: var(--color-gold);
+  font-weight: bold;
 }
 
 .leaderboardName {
@@ -251,7 +313,7 @@
 }
 
 .leaderboardRating {
-  font-family: var(--font-mono, 'Courier New', monospace);
+  font-family: var(--font-mono);
   color: var(--color-text);
   font-weight: bold;
 }

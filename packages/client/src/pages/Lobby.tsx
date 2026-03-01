@@ -145,7 +145,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
                     key={entry.username}
                     className={`${styles.leaderboardEntry} ${entry.username === username ? styles.leaderboardSelf : ''}`}
                   >
-                    <span className={styles.leaderboardRank}>#{entry.rank}</span>
+                    <span className={entry.rank <= 3 ? styles.leaderboardRankTop : styles.leaderboardRank}>#{entry.rank}</span>
                     <span className={styles.leaderboardName}>{entry.username}</span>
                     <span className={styles.leaderboardRating}>{entry.rating}</span>
                   </li>
