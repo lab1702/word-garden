@@ -37,6 +37,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
   const [matchmaking, setMatchmaking] = useState(false);
   const [error, setError] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [lobbyStats, setLobbyStats] = useState<{ onlinePlayers: number; matchmakingPlayers: number } | null>(null);
 
   const loadGames = useCallback(async () => {
     try {
@@ -69,6 +70,9 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
     opponent_moved: () => loadGames(),
     game_finished: () => { loadGames(); onGameFinished?.(); },
     leaderboard_updated: () => loadLeaderboard(),
+    lobby_stats: (data: { onlinePlayers: number; matchmakingPlayers: number }) => {
+      setLobbyStats(data);
+    },
   });
 
   const createGame = async () => {
@@ -151,6 +155,19 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
                   </li>
                 ))}
               </ol>
+            </section>
+          )}
+          {lobbyStats && (
+            <section className={styles.communityStats}>
+              <h2 className={styles.sectionTitle}>Community</h2>
+              <div className={styles.statRow}>
+                <span className={styles.statValue}>{lobbyStats.onlinePlayers}</span>
+                <span className={styles.statLabel}>players online</span>
+              </div>
+              <div className={styles.statRow}>
+                <span className={styles.statValue}>{lobbyStats.matchmakingPlayers}</span>
+                <span className={styles.statLabel}>searching for match</span>
+              </div>
             </section>
           )}
         </div>
