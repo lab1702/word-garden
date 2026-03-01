@@ -1,4 +1,5 @@
 import type { Response } from 'express';
+import pool from '../db/pool.js';
 
 const MAX_CONNECTIONS_PER_USER = 5;
 const MAX_GLOBAL_CONNECTIONS = 10_000;
@@ -19,6 +20,7 @@ function removeClient(userId: string, res: Response): void {
     }
     if (userClients.length === 0) clients.delete(userId);
   }
+  broadcastLobbyStats();
 }
 
 export function addClient(userId: string, res: Response): void {
@@ -33,6 +35,7 @@ export function addClient(userId: string, res: Response): void {
   globalConnectionCount++;
   res.on('close', () => removeClient(userId, res));
   res.on('error', () => removeClient(userId, res));
+  broadcastLobbyStats();
 }
 
 export function sendEvent(userId: string, event: string, data: unknown): void {
@@ -80,5 +83,41 @@ export function broadcastEvent(event: string, data: unknown): void {
         removeClient(userId, res);
       }
     }
+  }
+}
+
+export function getOnlinePlayerCount(): number {
+  return clients.size;
+}
+
+let lobbyStatsTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function broadcastLobbyStats(): void {
+  if (lobbyStatsTimer) return;
+  lobbyStatsTimer = setTimeout(async () => {
+    lobbyStatsTimer = null;
+    try {
+      const result = await pool.query('SELECT COUNT(*)::int AS count FROM matchmaking_queue');
+      const matchmakingPlayers = result.rows[0].count;
+      broadcastEvent('lobby_stats', {
+        onlinePlayers: clients.size,
+        matchmakingPlayers,
+      });
+    } catch (err) {
+      console.error('Failed to broadcast lobby stats:', err);
+    }
+  }, 500);
+}
+
+export async function sendLobbyStats(userId: string): Promise<void> {
+  try {
+    const result = await pool.query('SELECT COUNT(*)::int AS count FROM matchmaking_queue');
+    const matchmakingPlayers = result.rows[0].count;
+    sendEvent(userId, 'lobby_stats', {
+      onlinePlayers: clients.size,
+      matchmakingPlayers,
+    });
+  } catch (err) {
+    console.error('Failed to send lobby stats:', err);
   }
 }
