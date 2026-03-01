@@ -286,6 +286,20 @@ router.get('/:id', requireAuth, async (req, res) => {
         totalScore: previousMove.score,
         createdAt: previousMove.created_at,
       } : null,
+      ratingChanges: g.status === 'finished' && g.player1_rating_before != null ? {
+        me: {
+          ratingBefore: Math.round(isPlayer1 ? g.player1_rating_before : g.player2_rating_before),
+          ratingAfter: Math.round(isPlayer1 ? g.player1_rating_after : g.player2_rating_after),
+          rankBefore: isPlayer1 ? g.player1_rank_before : g.player2_rank_before,
+          rankAfter: isPlayer1 ? g.player1_rank_after : g.player2_rank_after,
+        },
+        opponent: {
+          ratingBefore: Math.round(isPlayer1 ? g.player2_rating_before : g.player1_rating_before),
+          ratingAfter: Math.round(isPlayer1 ? g.player2_rating_after : g.player1_rating_after),
+          rankBefore: isPlayer1 ? g.player2_rank_before : g.player1_rank_before,
+          rankAfter: isPlayer1 ? g.player2_rank_after : g.player1_rank_after,
+        },
+      } : null,
     });
   } catch (err) {
     console.error('Get game error:', err);
