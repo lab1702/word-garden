@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router';
 import { useAuth } from './hooks/useAuth.js';
 import { Login } from './pages/Login.js';
 import { Lobby } from './pages/Lobby.js';
@@ -22,7 +22,7 @@ export function App() {
       <div className={styles.layout}>
         <header className={styles.header}>
           <div className={styles.headerBrand}>
-            <span className={styles.headerTitle}>Word Garden</span>
+            <Link to="/" className={styles.headerTitle}>Word Garden</Link>
             <span className={styles.headerUser}>
               {user.username} ({Math.round(user.rating)})
             </span>

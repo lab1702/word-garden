@@ -29,6 +29,12 @@
   font-weight: bold;
   color: var(--color-accent);
   letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.headerTitle:hover {
+  opacity: 0.8;
 }
 
 .headerUser {
