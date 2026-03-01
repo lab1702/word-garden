@@ -247,13 +247,14 @@ router.get('/:id', requireAuth, async (req, res) => {
       return;
     }
 
-    // Get last move
-    const lastMoveResult = await pool.query(
-      'SELECT * FROM moves WHERE game_id = $1 ORDER BY created_at DESC LIMIT 1',
+    // Get last two moves (to show score gained for both players)
+    const lastMovesResult = await pool.query(
+      'SELECT * FROM moves WHERE game_id = $1 ORDER BY created_at DESC LIMIT 2',
       [g.id],
     );
 
-    const lastMove = lastMoveResult.rows[0] ?? null;
+    const lastMove = lastMovesResult.rows[0] ?? null;
+    const previousMove = lastMovesResult.rows[1] ?? null;
 
     res.json({
       id: g.id,
@@ -276,6 +277,14 @@ router.get('/:id', requireAuth, async (req, res) => {
         wordsFormed: lastMove.words_formed,
         totalScore: lastMove.score,
         createdAt: lastMove.created_at,
+      } : null,
+      previousMove: previousMove ? {
+        playerId: previousMove.player_id,
+        moveType: previousMove.move_type,
+        tilesPlaced: previousMove.tiles_placed,
+        wordsFormed: previousMove.words_formed,
+        totalScore: previousMove.score,
+        createdAt: previousMove.created_at,
       } : null,
     });
   } catch (err) {

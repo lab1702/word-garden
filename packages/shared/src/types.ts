@@ -50,6 +50,7 @@ export interface PlayerGameView extends Omit<GameState, 'player1Id' | 'player2Id
   tilesRemaining: number;
   opponentTileCount: number;
   lastMove: MoveRecord | null;
+  previousMove: MoveRecord | null;
 }
 
 export interface MoveRecord {

@@ -61,6 +61,29 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
   const opponentScore = game.playerNumber === 1 ? game.player2Score : game.player1Score;
   const isFinished = game.status === 'finished';
 
+  // Determine each player's last score gain from the two most recent moves.
+  // After any move, currentTurn switches, so:
+  //   lastMove was made by player (3 - currentTurn)
+  //   previousMove was made by player currentTurn
+  const lastMovePlayerNum = game.currentTurn === 1 ? 2 : 1;
+  let myLastScoreGain: number | null = null;
+  let opponentLastScoreGain: number | null = null;
+
+  if (game.lastMove) {
+    if (lastMovePlayerNum === game.playerNumber) {
+      myLastScoreGain = game.lastMove.totalScore;
+    } else {
+      opponentLastScoreGain = game.lastMove.totalScore;
+    }
+  }
+  if (game.previousMove) {
+    if (lastMovePlayerNum === game.playerNumber) {
+      opponentLastScoreGain = game.previousMove.totalScore;
+    } else {
+      myLastScoreGain = game.previousMove.totalScore;
+    }
+  }
+
   return (
     <TileDragProvider>
     <div className={styles.gamePage}>
@@ -70,7 +93,10 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
       <div className={styles.scoreboard}>
         <div className={`${styles.playerScore} ${isMyTurn ? styles.activePlayer : ''}`}>
           <span className={styles.playerLabel}>You</span>
-          <span className={styles.scoreValue}>{myScore}</span>
+          <span className={styles.scoreValue}>
+            {myScore}
+            {myLastScoreGain != null && <span className={styles.scoreGain}>+{myLastScoreGain}</span>}
+          </span>
         </div>
         <div className={styles.gameStatus}>
           {isFinished ? (
@@ -84,7 +110,10 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
         </div>
         <div className={`${styles.playerScore} ${!isMyTurn && !isFinished ? styles.activePlayer : ''}`}>
           <span className={styles.playerLabel}>{game.opponentUsername || '?'}{game.opponentRating != null ? ` (${Math.round(game.opponentRating)})` : ''}</span>
-          <span className={styles.scoreValue}>{opponentScore}</span>
+          <span className={styles.scoreValue}>
+            {opponentScore}
+            {opponentLastScoreGain != null && <span className={styles.scoreGain}>+{opponentLastScoreGain}</span>}
+          </span>
           {!isFinished && <span className={styles.tileCount}>{game.opponentTileCount} tiles</span>}
         </div>
       </div>

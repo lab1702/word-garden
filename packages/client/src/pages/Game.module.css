@@ -71,6 +71,13 @@
   color: var(--color-gold);
 }
 
+.scoreGain {
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: var(--color-accent);
+  margin-left: 0.25rem;
+}
+
 .tileCount {
   font-size: 0.7rem;
   color: var(--color-text-dim);

@@ -27,6 +27,14 @@ interface GameData {
     totalScore: number;
     createdAt: string;
   } | null;
+  previousMove: {
+    playerId: string | null;
+    moveType: string;
+    tilesPlaced: TilePlacement[];
+    wordsFormed: { word: string; score: number }[];
+    totalScore: number;
+    createdAt: string;
+  } | null;
 }
 
 export function useGame(gameId: string, onGameFinished?: () => void) {
