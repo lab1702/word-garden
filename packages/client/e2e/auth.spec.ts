@@ -7,6 +7,9 @@ test('can register and login with password', async ({ page }) => {
   await page.fill('[name="password"]', 'testpassword123');
   await page.click('button:has-text("Create Account")');
   await expect(page.locator(`text=${username}`)).toBeVisible();
+
+  // Cleanup: delete test account
+  await page.click('button:has-text("Delete Account")');
 });
 
 test('shows error for short password', async ({ page }) => {
@@ -35,4 +38,7 @@ test('can login after registering', async ({ page }) => {
   await page.fill('[name="password"]', 'testpassword123');
   await page.click('button:has-text("Sign In")');
   await expect(page.locator(`text=${username}`)).toBeVisible();
+
+  // Cleanup: delete test account
+  await page.click('button:has-text("Delete Account")');
 });

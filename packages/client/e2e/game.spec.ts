@@ -13,6 +13,9 @@ test('can create a game with invite code', async ({ page }) => {
   // Create game
   await page.click('button:has-text("Create Game")');
   await expect(page.locator('strong:has-text("GARDEN-")')).toBeVisible();
+
+  // Cleanup: delete test account (also deletes waiting games)
+  await page.click('button:has-text("Delete Account")');
 });
 
 test('two players can join a game via invite code', async ({ browser }) => {
@@ -49,6 +52,13 @@ test('two players can join a game via invite code', async ({ browser }) => {
 
   // Player 2 should see the game board
   await expect(page2.locator(`text=${player1}`)).toBeVisible({ timeout: 5000 });
+
+  // Cleanup: delete both test accounts
+  // Deleting player1 forfeits the game, then delete player2
+  await page1.goto('/');
+  await page1.click('button:has-text("Delete Account")');
+  await page2.goto('/');
+  await page2.click('button:has-text("Delete Account")');
 
   await page1.close();
   await page2.close();

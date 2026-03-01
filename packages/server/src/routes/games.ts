@@ -186,10 +186,14 @@ router.get('/', requireAuth, async (req, res) => {
               u2.username as player2_username, u2.rating as player2_rating,
               g.player1_rating_before, g.player1_rating_after,
               g.player2_rating_before, g.player2_rating_after
-       FROM games g
+       FROM (
+         SELECT id FROM games WHERE player1_id = $1
+         UNION
+         SELECT id FROM games WHERE player2_id = $1
+       ) AS matched
+       JOIN games g ON g.id = matched.id
        LEFT JOIN users u1 ON g.player1_id = u1.id
        LEFT JOIN users u2 ON g.player2_id = u2.id
-       WHERE g.player1_id = $1 OR g.player2_id = $1
        ORDER BY g.updated_at DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset],

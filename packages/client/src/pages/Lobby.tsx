@@ -60,7 +60,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
 
   useEffect(() => { loadGames(); loadLeaderboard(); }, [loadGames, loadLeaderboard]);
 
-  useSSE({
+  const { connected } = useSSE({
     match_found: (data: { gameId: string }) => {
       setMatchmaking(false);
       navigate(`/game/${data.gameId}`);
@@ -139,12 +139,15 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
     }
   };
 
+  const [showAllFinished, setShowAllFinished] = useState(false);
   const activeGames = games.filter(g => g.status === 'active');
   const waitingGames = games.filter(g => g.status === 'waiting');
-  const finishedGames = games.filter(g => g.status === 'finished').slice(0, 5);
+  const allFinishedGames = games.filter(g => g.status === 'finished');
+  const finishedGames = showAllFinished ? allFinishedGames : allFinishedGames.slice(0, 5);
 
   return (
     <div className={styles.lobby}>
+      {!connected && <p className={styles.reconnecting}>Reconnecting...</p>}
       <div className={styles.lobbyGrid}>
         <div className={styles.sidePanel}>
           {leaderboard.length > 0 && (
@@ -249,7 +252,7 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
         <div className={styles.sidePanel}>
           {finishedGames.length > 0 && (
             <section>
-              <h2 className={styles.sectionTitle}>5 Most Recent Games</h2>
+              <h2 className={styles.sectionTitle}>Recent Games</h2>
               {finishedGames.map(g => (
                 <div key={g.id} className={styles.gameCard} onClick={() => navigate(`/game/${g.id}`)}>
                   <div className={styles.gameInfo}>
@@ -268,6 +271,14 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
                   </div>
                 </div>
               ))}
+              {allFinishedGames.length > 5 && (
+                <button
+                  onClick={() => setShowAllFinished(prev => !prev)}
+                  className={styles.showMoreButton}
+                >
+                  {showAllFinished ? 'Show Less' : `Show All (${allFinishedGames.length})`}
+                </button>
+              )}
             </section>
           )}
         </div>

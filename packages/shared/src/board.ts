@@ -38,6 +38,8 @@ setSymmetric(2, 6, 'DL');
 setSymmetric(3, 7, 'DL');
 setSymmetric(6, 6, 'DL');
 
+Object.freeze(PREMIUM_MAP);
+
 export function getPremium(row: number, col: number): CellPremium {
   return PREMIUM_MAP[`${row},${col}`] ?? null;
 }

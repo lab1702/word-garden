@@ -74,8 +74,21 @@ const ALWAYS_BLOCK = new Set([
   'fuck', 'nigger', 'nigga', 'cunt', 'kike', 'spic', 'twat', 'slut', 'whore',
 ]);
 
+// Usernames that contain blocked substrings but are clearly not profane.
+// Checked against the lowercased username before profanity scanning.
+const ALLOWED_SUBSTRINGS = new Set([
+  'assassin', 'class', 'classic', 'bass', 'mass', 'pass', 'grass',
+  'cockpit', 'cocktail', 'hancock', 'peacock',
+  'scunthorpe', 'dickens', 'dickson',
+  'therapist', 'buckshot',
+]);
+
 export function containsProfanity(username: string): boolean {
   const lower = username.toLowerCase();
+  // Check if the username contains a known safe substring that would otherwise trigger a false positive
+  for (const safe of ALLOWED_SUBSTRINGS) {
+    if (lower.includes(safe)) return false;
+  }
   return BLOCKED_WORDS.some((word) => {
     const idx = lower.indexOf(word);
     if (idx === -1) return false;

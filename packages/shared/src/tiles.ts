@@ -30,9 +30,11 @@ export const TILE_DISTRIBUTION: { letter: string; points: number; count: number 
   { letter: '',  points: 0,  count: 2 }, // blanks
 ];
 
-// Maps letter -> point value. Blank tiles map as '' -> 0.
+// Maps letter -> point value. Blank tiles are excluded (they score 0 when played).
 export const LETTER_POINTS: ReadonlyMap<string, number> = new Map(
-  TILE_DISTRIBUTION.map(({ letter, points }) => [letter.toUpperCase(), points]),
+  TILE_DISTRIBUTION
+    .filter(({ letter }) => letter !== '')
+    .map(({ letter, points }) => [letter.toUpperCase(), points]),
 );
 
 export const RACK_SIZE = 7;

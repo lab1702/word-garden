@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type EventHandler = (data: any) => void;
 
@@ -6,10 +6,11 @@ const MAX_BACKOFF_MS = 30_000;
 const INITIAL_BACKOFF_MS = 1_000;
 const MAX_ERRORS = 5;
 
-export function useSSE(handlers: Record<string, EventHandler>) {
+export function useSSE(handlers: Record<string, EventHandler>): { connected: boolean } {
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
   const eventKeys = Object.keys(handlers).sort().join(',');
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
     let backoff = INITIAL_BACKOFF_MS;
@@ -31,12 +32,13 @@ export function useSSE(handlers: Record<string, EventHandler>) {
         });
       }
 
-      es.onopen = () => { errorCount = 0; backoff = INITIAL_BACKOFF_MS; };
+      es.onopen = () => { errorCount = 0; backoff = INITIAL_BACKOFF_MS; setConnected(true); };
       es.onerror = () => {
         errorCount++;
         if (errorCount > MAX_ERRORS) {
           es?.close();
           es = null;
+          setConnected(false);
           if (!disposed) {
             // Check if auth has expired before reconnecting
             const basePath = import.meta.env.VITE_BASE_PATH || '';
@@ -66,8 +68,11 @@ export function useSSE(handlers: Record<string, EventHandler>) {
     connect();
     return () => {
       disposed = true;
+      setConnected(false);
       if (reconnectTimer) clearTimeout(reconnectTimer);
       es?.close();
     };
   }, [eventKeys]);
+
+  return { connected };
 }

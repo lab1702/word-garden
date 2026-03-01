@@ -99,39 +99,55 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
 
   const isMyTurn = game ? game.currentTurn === game.playerNumber : false;
 
+  // Refs for values used as guards in callbacks — avoids recreating callbacks
+  // every time game state changes from a server response.
+  const gameRef = useRef(game);
+  gameRef.current = game;
+  const isMyTurnRef = useRef(isMyTurn);
+  isMyTurnRef.current = isMyTurn;
+  const rackRef = useRef(rack);
+  rackRef.current = rack;
+  const selectedTileIndexRef = useRef(selectedTileIndex);
+  selectedTileIndexRef.current = selectedTileIndex;
+  const tentativePlacementsRef = useRef(tentativePlacements);
+  tentativePlacementsRef.current = tentativePlacements;
+
   const placeTile = useCallback((row: number, col: number) => {
-    if (!game || !isMyTurn || selectedTileIndex === null) return;
+    const g = gameRef.current;
+    const idx = selectedTileIndexRef.current;
+    if (!g || !isMyTurnRef.current || idx === null) return;
 
     // Can't place on occupied cell
-    if (game.board[row][col].tile) return;
+    if (g.board[row][col].tile) return;
     // Can't place where tentative tile already is
-    if (tentativePlacements.some(t => t.row === row && t.col === col)) return;
+    if (tentativePlacementsRef.current.some(t => t.row === row && t.col === col)) return;
 
-    const tile = rack[selectedTileIndex];
+    const tile = rackRef.current[idx];
 
     // Blank tile — prompt for letter choice
     if (tile.letter === '') {
-      setPendingBlankPlacement({ row, col, rackIndex: selectedTileIndex, originalTile: tile });
+      setPendingBlankPlacement({ row, col, rackIndex: idx, originalTile: tile });
       setSelectedTileIndex(null);
       return;
     }
 
     setTentativePlacements(prev => [
       ...prev,
-      { row, col, letter: tile.letter, isBlank: false, rackIndex: selectedTileIndex, originalTile: tile },
+      { row, col, letter: tile.letter, isBlank: false, rackIndex: idx, originalTile: tile },
     ]);
 
     // Remove from available rack tiles
-    setRack(prev => prev.filter((_, i) => i !== selectedTileIndex));
+    setRack(prev => prev.filter((_, i) => i !== idx));
     setSelectedTileIndex(null);
-  }, [game, isMyTurn, selectedTileIndex, rack, tentativePlacements]);
+  }, []);
 
   const placeTileFromRack = useCallback((row: number, col: number, rackIndex: number) => {
-    if (!game || !isMyTurn) return;
-    if (game.board[row][col].tile) return;
-    if (tentativePlacements.some(t => t.row === row && t.col === col)) return;
+    const g = gameRef.current;
+    if (!g || !isMyTurnRef.current) return;
+    if (g.board[row][col].tile) return;
+    if (tentativePlacementsRef.current.some(t => t.row === row && t.col === col)) return;
 
-    const tile = rack[rackIndex];
+    const tile = rackRef.current[rackIndex];
     if (!tile) return;
 
     if (tile.letter === '') {
@@ -145,7 +161,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     ]);
     setRack(prev => prev.filter((_, i) => i !== rackIndex));
     setSelectedTileIndex(null);
-  }, [game, isMyTurn, rack, tentativePlacements]);
+  }, []);
 
   const confirmBlankTile = useCallback((letter: string) => {
     if (!pendingBlankPlacement) return;
@@ -164,41 +180,43 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
   }, []);
 
   const removeTentative = useCallback((row: number, col: number) => {
-    const placement = tentativePlacements.find(t => t.row === row && t.col === col);
+    const placement = tentativePlacementsRef.current.find(t => t.row === row && t.col === col);
     if (!placement) return;
 
     setRack(prev => [...prev, placement.originalTile]);
     setTentativePlacements(prev => prev.filter(t => !(t.row === row && t.col === col)));
-  }, [tentativePlacements]);
+  }, []);
 
   const moveTentative = useCallback((fromRow: number, fromCol: number, toRow: number, toCol: number) => {
-    if (!game || !isMyTurn) return;
-    if (game.board[toRow][toCol].tile) return;
-    if (tentativePlacements.some(t => t.row === toRow && t.col === toCol)) return;
+    const g = gameRef.current;
+    if (!g || !isMyTurnRef.current) return;
+    if (g.board[toRow][toCol].tile) return;
+    if (tentativePlacementsRef.current.some(t => t.row === toRow && t.col === toCol)) return;
 
     setTentativePlacements(prev => prev.map(t =>
       t.row === fromRow && t.col === fromCol
         ? { ...t, row: toRow, col: toCol }
         : t
     ));
-  }, [game, isMyTurn, tentativePlacements]);
+  }, []);
 
   const onCellClick = useCallback((row: number, col: number) => {
     // If there's a tentative tile here, remove it
-    if (tentativePlacements.some(t => t.row === row && t.col === col)) {
+    if (tentativePlacementsRef.current.some(t => t.row === row && t.col === col)) {
       removeTentative(row, col);
       return;
     }
     // Otherwise place selected tile
     placeTile(row, col);
-  }, [tentativePlacements, removeTentative, placeTile]);
+  }, [removeTentative, placeTile]);
 
   const clearPlacements = useCallback(() => {
-    if (!game) return;
-    setRack(assignIds(game.rack));
+    const g = gameRef.current;
+    if (!g) return;
+    setRack(assignIds(g.rack));
     setTentativePlacements([]);
     setSelectedTileIndex(null);
-  }, [game, assignIds]);
+  }, [assignIds]);
 
   const reorderRack = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
@@ -226,11 +244,12 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
   }, [exchangeMode]);
 
   const submitMove = useCallback(async () => {
-    if (!game || tentativePlacements.length === 0) return;
+    const placements = tentativePlacementsRef.current;
+    if (!gameRef.current || placements.length === 0) return;
     setError('');
     setSubmitting(true);
     try {
-      const tiles: TilePlacement[] = tentativePlacements.map(({ row, col, letter, isBlank }) => ({
+      const tiles: TilePlacement[] = placements.map(({ row, col, letter, isBlank }) => ({
         row, col, letter, isBlank,
       }));
       const result = await apiFetch<{ gameOver: boolean }>(`/games/${gameId}/move`, {
@@ -244,7 +263,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     } finally {
       setSubmitting(false);
     }
-  }, [game, gameId, tentativePlacements, loadGame, onGameFinished]);
+  }, [gameId, loadGame, onGameFinished]);
 
   const pass = useCallback(async () => {
     setError('');
@@ -299,16 +318,22 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     });
   }, []);
 
+  const exchangeSelectionRef = useRef(exchangeSelection);
+  exchangeSelectionRef.current = exchangeSelection;
+
   const submitExchange = useCallback(async () => {
-    if (exchangeSelection.size === 0 || !game) return;
+    const selection = exchangeSelectionRef.current;
+    const g = gameRef.current;
+    if (selection.size === 0 || !g) return;
     // Map local rack indices to server-side rack indices.
     // The local rack may have been reordered via drag-and-drop or shuffle,
     // so local indices can differ from the server's rack order.
-    const serverRack = game.rack;
+    const serverRack = g.rack;
+    const currentRack = rackRef.current;
     const usedServerIndices = new Set<number>();
     const serverIndices: number[] = [];
-    for (const localIdx of exchangeSelection) {
-      const tile = rack[localIdx];
+    for (const localIdx of selection) {
+      const tile = currentRack[localIdx];
       const serverIdx = serverRack.findIndex(
         (t, i) => !usedServerIndices.has(i) && t.letter === tile.letter && t.points === tile.points,
       );
@@ -320,7 +345,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     await exchangeTiles(serverIndices);
     setExchangeMode(false);
     setExchangeSelection(new Set());
-  }, [exchangeSelection, exchangeTiles, rack, game]);
+  }, [exchangeTiles]);
 
   const resign = useCallback(async () => {
     setError('');
