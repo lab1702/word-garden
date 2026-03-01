@@ -36,6 +36,12 @@
   50% { transform: scale(1.03); }
 }
 
+.lastMove {
+  outline: 2px solid rgba(127, 184, 54, 0.85);
+  outline-offset: -1px;
+  box-shadow: 0 0 8px rgba(127, 184, 54, 0.5), var(--shadow-md);
+}
+
 .letter {
   font-family: var(--font-main);
   font-weight: bold;

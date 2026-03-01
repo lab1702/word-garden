@@ -116,11 +116,11 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
               key={`${r}-${c}`}
               data-row={r}
               data-col={c}
-              className={`${styles.cell} ${premiumClass} ${isLastMove ? styles.lastMove : ''} ${isHovered ? styles.dropHover : ''}`}
+              className={`${styles.cell} ${premiumClass} ${isHovered ? styles.dropHover : ''}`}
               onClick={() => onCellClick(r, c)}
             >
               {cell.tile ? (
-                <Tile letter={cell.tile.letter} points={cell.tile.points} />
+                <Tile letter={cell.tile.letter} points={cell.tile.points} lastMove={isLastMove} />
               ) : tentative ? (
                 <div
                   onPointerDown={(e) => handleTentativePointerDown(e, r, c, tentative)}

@@ -54,10 +54,6 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.lastMove {
-  box-shadow: inset 0 0 0 2px rgba(127, 184, 54, 0.5);
-}
-
 .dropHover {
   background: rgba(127, 184, 54, 0.3) !important;
   box-shadow: inset 0 0 0 2px rgba(127, 184, 54, 0.6);
