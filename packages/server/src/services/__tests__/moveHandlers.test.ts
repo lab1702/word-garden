@@ -110,6 +110,20 @@ describe('moveHandlers', () => {
       expect(result).toEqual({ type: 'error', status: 400, error: 'Tile Z not in your rack' });
     });
 
+    it('returns error when a tile element is null', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow();
+      const result = await handlePlayMove(client, g, 'user-1', [null as any]);
+      expect(result).toEqual({ type: 'error', status: 400, error: 'Invalid tile placement data' });
+    });
+
+    it('returns error when a tile element is a number', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow();
+      const result = await handlePlayMove(client, g, 'user-1', [42 as any]);
+      expect(result).toEqual({ type: 'error', status: 400, error: 'Invalid tile placement data' });
+    });
+
     it('does not mutate the original game board', async () => {
       const client = makeMockClient();
       const g = makeGameRow();
@@ -153,6 +167,13 @@ describe('moveHandlers', () => {
       const g = makeGameRow({ tile_bag: [{ letter: 'X', points: 8 }] });
       const result = await handleExchangeMove(client, g, 'user-1', [0, 1]);
       expect(result).toEqual({ type: 'error', status: 400, error: 'Not enough tiles in bag' });
+    });
+
+    it('returns error for too many exchange tiles', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow();
+      const result = await handleExchangeMove(client, g, 'user-1', [0,1,2,3,4,5,6,7]);
+      expect(result).toEqual({ type: 'error', status: 400, error: 'Too many tiles to exchange' });
     });
 
     it('does not mutate the original tile bag', async () => {

@@ -29,6 +29,9 @@ export async function handlePlayMove(
   }
 
   for (const t of tiles) {
+    if (!t || typeof t !== 'object') {
+      return { type: 'error', status: 400, error: 'Invalid tile placement data' };
+    }
     if (typeof t.row !== 'number' || typeof t.col !== 'number' ||
         !Number.isInteger(t.row) || !Number.isInteger(t.col) ||
         t.row < 0 || t.row >= BOARD_SIZE || t.col < 0 || t.col >= BOARD_SIZE ||
@@ -207,6 +210,9 @@ export async function handleExchangeMove(
 
   if (!Array.isArray(exchangeTiles) || exchangeTiles.length === 0) {
     return { type: 'error', status: 400, error: 'No tiles to exchange' };
+  }
+  if (exchangeTiles.length > rack.length) {
+    return { type: 'error', status: 400, error: 'Too many tiles to exchange' };
   }
   if (!exchangeTiles.every((i: number) => Number.isInteger(i) && i >= 0 && i < rack.length)) {
     return { type: 'error', status: 400, error: 'Invalid tile indices' };
