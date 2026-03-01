@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { verifyToken, type SessionPayload } from '../services/session.js';
 import pool from '../db/pool.js';
+import { getCachedTokenVersion, setCachedTokenVersion } from '../services/tokenVersionCache.js';
 
 declare global {
   namespace Express {
@@ -22,12 +23,22 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
 
-  // Verify token_version matches the DB (rejects tokens issued before password change)
-  const result = await pool.query('SELECT token_version FROM users WHERE id = $1', [payload.userId]);
-  if (result.rows.length === 0 || result.rows[0].token_version !== payload.tokenVersion) {
-    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
-    res.status(401).json({ error: 'Token revoked' });
-    return;
+  // Verify token_version (cache-first to reduce DB load, 30s TTL)
+  const cachedVersion = getCachedTokenVersion(payload.userId);
+  if (cachedVersion !== null) {
+    if (cachedVersion !== payload.tokenVersion) {
+      res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+      res.status(401).json({ error: 'Token revoked' });
+      return;
+    }
+  } else {
+    const result = await pool.query('SELECT token_version FROM users WHERE id = $1', [payload.userId]);
+    if (result.rows.length === 0 || result.rows[0].token_version !== payload.tokenVersion) {
+      res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+      res.status(401).json({ error: 'Token revoked' });
+      return;
+    }
+    setCachedTokenVersion(payload.userId, result.rows[0].token_version);
   }
 
   req.user = payload;

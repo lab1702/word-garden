@@ -13,6 +13,7 @@ import { createToken, verifyToken } from '../services/session.js';
 import { requireAuth } from '../middleware/auth.js';
 import { containsProfanity } from '../services/profanityFilter.js';
 import { sendEvent, broadcastEvent, disconnectUser } from '../services/sse.js';
+import { invalidateTokenVersion } from '../services/tokenVersionCache.js';
 import { calculateNewRatings } from '../services/glicko2.js';
 
 const router = Router();
@@ -365,6 +366,7 @@ router.put('/password', requireAuth, async (req, res) => {
 
     // Disconnect any existing SSE connections (they hold stale tokens)
     disconnectUser(userId);
+    invalidateTokenVersion(userId);
 
     res.json({ ok: true });
   } catch (err) {
@@ -438,6 +440,7 @@ router.delete('/account', requireAuth, async (req, res) => {
     await client.query('COMMIT');
 
     disconnectUser(userId);
+    invalidateTokenVersion(userId);
     res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     res.json({ ok: true });
   } catch (err) {
