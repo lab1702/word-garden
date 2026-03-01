@@ -228,8 +228,13 @@ router.post('/register/passkey/verify', async (req, res) => {
     } finally {
       client.release();
     }
-  } catch (err) {
-    res.status(400).json({ error: 'Registration failed' });
+  } catch (err: any) {
+    if (err?.code === '23505') {
+      res.status(409).json({ error: 'Username already taken' });
+    } else {
+      console.error('Passkey registration error:', err);
+      res.status(500).json({ error: 'Internal error' });
+    }
   }
 });
 
