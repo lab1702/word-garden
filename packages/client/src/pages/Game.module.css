@@ -166,10 +166,15 @@
   min-height: 44px;
 }
 
-.secondaryAction:hover {
+.secondaryAction:hover:not(:disabled) {
   background: var(--color-surface-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+
+.secondaryAction:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .dangerAction {
@@ -183,11 +188,16 @@
   min-height: 44px;
 }
 
-.dangerAction:hover {
+.dangerAction:hover:not(:disabled) {
   border-color: var(--color-danger);
   color: var(--color-danger);
   background: rgba(212, 88, 88, 0.1);
   transform: translateY(-1px);
+}
+
+.dangerAction:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .gameOverOverlay {
