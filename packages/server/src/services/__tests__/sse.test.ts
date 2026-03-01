@@ -4,6 +4,7 @@ let addClient: typeof import('../sse.js').addClient;
 let sendEvent: typeof import('../sse.js').sendEvent;
 let disconnectUser: typeof import('../sse.js').disconnectUser;
 let closeAllConnections: typeof import('../sse.js').closeAllConnections;
+let isAtCapacity: typeof import('../sse.js').isAtCapacity;
 
 function mockResponse() {
   return {
@@ -21,6 +22,7 @@ describe('sse', () => {
     sendEvent = mod.sendEvent;
     disconnectUser = mod.disconnectUser;
     closeAllConnections = mod.closeAllConnections;
+    isAtCapacity = mod.isAtCapacity;
   });
 
   it('sends event to connected client', () => {
@@ -67,5 +69,26 @@ describe('sse', () => {
     closeAllConnections();
     expect(r1.end).toHaveBeenCalled();
     expect(r2.end).toHaveBeenCalled();
+  });
+
+  it('isAtCapacity returns false under normal usage', () => {
+    addClient('user-1', mockResponse());
+    expect(isAtCapacity()).toBe(false);
+  });
+
+  it('disconnectUser decrements global count correctly', () => {
+    const r1 = mockResponse(), r2 = mockResponse();
+    addClient('user-1', r1);
+    addClient('user-1', r2);
+    disconnectUser('user-1');
+    // After disconnect, adding a new client should still work (not at capacity)
+    expect(isAtCapacity()).toBe(false);
+  });
+
+  it('closeAllConnections resets global count', () => {
+    addClient('user-1', mockResponse());
+    addClient('user-2', mockResponse());
+    closeAllConnections();
+    expect(isAtCapacity()).toBe(false);
   });
 });

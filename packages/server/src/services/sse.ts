@@ -1,13 +1,22 @@
 import type { Response } from 'express';
 
 const MAX_CONNECTIONS_PER_USER = 5;
+const MAX_GLOBAL_CONNECTIONS = 10_000;
 const clients = new Map<string, Response[]>();
+let globalConnectionCount = 0;
+
+export function isAtCapacity(): boolean {
+  return globalConnectionCount >= MAX_GLOBAL_CONNECTIONS;
+}
 
 function removeClient(userId: string, res: Response): void {
   const userClients = clients.get(userId);
   if (userClients) {
     const idx = userClients.indexOf(res);
-    if (idx !== -1) userClients.splice(idx, 1);
+    if (idx !== -1) {
+      userClients.splice(idx, 1);
+      globalConnectionCount--;
+    }
     if (userClients.length === 0) clients.delete(userId);
   }
 }
@@ -17,9 +26,11 @@ export function addClient(userId: string, res: Response): void {
   const userClients = clients.get(userId)!;
   while (userClients.length >= MAX_CONNECTIONS_PER_USER) {
     const oldest = userClients.shift()!;
+    globalConnectionCount--;
     try { oldest.end(); } catch { /* already closed */ }
   }
   userClients.push(res);
+  globalConnectionCount++;
   res.on('close', () => removeClient(userId, res));
   res.on('error', () => removeClient(userId, res));
 }
@@ -40,6 +51,7 @@ export function sendEvent(userId: string, event: string, data: unknown): void {
 export function disconnectUser(userId: string): void {
   const userClients = clients.get(userId);
   if (!userClients) return;
+  globalConnectionCount -= userClients.length;
   for (const res of [...userClients]) {
     try { res.end(); } catch { /* already closed */ }
   }
@@ -53,6 +65,7 @@ export function closeAllConnections(): void {
     }
   }
   clients.clear();
+  globalConnectionCount = 0;
 }
 
 export function broadcastEvent(event: string, data: unknown): void {
