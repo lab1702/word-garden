@@ -9,19 +9,20 @@
 }
 
 .picker {
-  background: var(--color-surface, #FFF8F0);
-  border-radius: 12px;
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   max-width: 320px;
   width: 90%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
 }
 
 .picker h3 {
   margin: 0 0 0.75rem;
   text-align: center;
-  font-family: var(--font-main, Georgia, serif);
-  color: var(--color-text, #2C1810);
+  font-family: var(--font-main);
+  color: var(--color-text);
   font-size: 1rem;
 }
 
@@ -33,21 +34,21 @@
 
 .letterButton {
   aspect-ratio: 1;
-  border: 1px solid var(--color-border, #ccc);
-  border-radius: 4px;
-  background: var(--color-tile-bg, #F5E6D0);
-  font-family: var(--font-mono, 'Courier New', monospace);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-mono);
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  color: var(--color-text, #2C1810);
+  color: var(--color-text);
   min-height: 36px;
 }
 
 .letterButton:hover {
-  background: var(--color-accent, #6B8E23);
+  background: var(--color-accent);
   color: white;
-  border-color: var(--color-accent, #6B8E23);
+  border-color: var(--color-accent);
 }
 
 .cancelButton {
@@ -55,9 +56,13 @@
   margin: 0.75rem auto 0;
   padding: 0.5rem 1.5rem;
   background: transparent;
-  border: 1px solid var(--color-border, #ccc);
-  border-radius: 8px;
-  font-family: var(--font-main, Georgia, serif);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
   cursor: pointer;
   color: var(--color-text-muted);
+}
+
+.cancelButton:hover {
+  background: var(--color-surface-hover);
 }
