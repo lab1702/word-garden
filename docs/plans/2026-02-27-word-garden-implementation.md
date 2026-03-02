@@ -555,7 +555,7 @@ git commit -m "feat: add shared types, tile distribution, and board layout"
 # docker-compose.yml
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: wordgarden
       POSTGRES_PASSWORD: wordgarden_dev

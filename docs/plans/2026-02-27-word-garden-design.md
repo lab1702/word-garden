@@ -242,7 +242,7 @@ word-garden/
 **Docker Compose** with two services:
 
 - `app` — Multi-stage Dockerfile: stage 1 builds client (Vite), stage 2 builds server (tsc), stage 3 runs server (serves static client assets + API). Exposes port 3000.
-- `db` — PostgreSQL 16. Named volume for data persistence. Migrations run on app startup.
+- `db` — PostgreSQL 18. Named volume for data persistence. Migrations run on app startup.
 
 **External Caddy** (already on host) reverse-proxies to `app:3000` with automatic TLS.
 

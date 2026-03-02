@@ -6,7 +6,7 @@ A web-based multiplayer word game. Players take turns placing letter tiles on a 
 
 - **Frontend:** React 19, Vite 6, React Router 7, CSS Modules
 - **Backend:** Express 5, TypeScript, Node 22
-- **Database:** PostgreSQL 16
+- **Database:** PostgreSQL 18
 - **Auth:** Password (bcrypt) + WebAuthn passkeys, JWT sessions
 - **Deployment:** Docker, multi-stage build
 
@@ -43,7 +43,7 @@ The app will be available at **http://localhost:9000**.
 
 This starts two containers:
 - `app` — the Node.js server serving both the API and the built client
-- `db` — PostgreSQL 16 with a persistent named volume (`pgdata`)
+- `db` — PostgreSQL 18 with a persistent named volume (`pgdata`)
 
 Database migrations run automatically on server startup.
 
@@ -58,7 +58,7 @@ docker compose build --no-cache && docker compose up -d --force-recreate
 ### Prerequisites
 
 - Node.js 22+
-- PostgreSQL 16+
+- PostgreSQL 18+
 - npm
 
 ### Database Setup
