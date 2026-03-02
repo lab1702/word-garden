@@ -1,7 +1,7 @@
 services:
   db:
     restart: unless-stopped
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: wordgarden
       POSTGRES_PASSWORD: wordgarden_dev
