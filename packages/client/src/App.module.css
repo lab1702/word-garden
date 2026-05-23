@@ -82,7 +82,7 @@
 
 .headerButtonDanger:hover {
   background: var(--color-danger);
-  color: #111;
+  color: #2a0f0f;
 }
 
 .content {

@@ -68,12 +68,13 @@
 }
 
 .actionButtonCancel {
-  background: var(--color-danger);
-  color: #111;
+  background: linear-gradient(180deg, #e86464, #c94545);
+  color: #2a0f0f;
+  box-shadow: var(--bevel-button);
 }
 
 .actionButtonCancel:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -145,17 +146,18 @@
 .copyButton {
   margin-left: 0.75rem;
   padding: 0.25rem 0.75rem;
-  background: var(--color-accent);
-  color: #111;
+  background: var(--gradient-accent);
+  color: #10210a;
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
-  font-weight: bold;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
 }
 
 .copyButton:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
 }
 
 .error {

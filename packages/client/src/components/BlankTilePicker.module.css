@@ -46,9 +46,9 @@
 }
 
 .letterButton:hover {
-  background: var(--color-accent);
-  color: white;
-  border-color: var(--color-accent);
+  background: var(--gradient-accent);
+  color: #10210a;
+  border-color: transparent;
 }
 
 .cancelButton {
