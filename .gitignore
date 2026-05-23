@@ -4,3 +4,6 @@ dist/
 *.local
 test-results/
 .worktrees/
+
+# Brainstorming visual companion
+.superpowers/
