@@ -377,10 +377,11 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       if (r.gameOver) { try { broadcastEvent('leaderboard_updated', {}); } catch {} }
       res.json({ gameOver: r.gameOver });
     } else {
-      const r = result as { type: 'success'; newRack: any; opponentId: string };
-      try { sendEvent(r.opponentId, 'opponent_moved', { gameId: g.id }); }
+      const r = result as { type: 'success'; newRack: any; opponentId: string; gameOver: boolean };
+      try { sendEvent(r.opponentId, r.gameOver ? 'game_finished' : 'opponent_moved', { gameId: g.id }); }
       catch (e) { console.error('SSE notification failed:', e); }
-      res.json({ newRack: r.newRack, gameOver: false });
+      if (r.gameOver) { try { broadcastEvent('leaderboard_updated', {}); } catch {} }
+      res.json({ newRack: r.newRack, gameOver: r.gameOver });
     }
   } catch (err) {
     await client.query('ROLLBACK');

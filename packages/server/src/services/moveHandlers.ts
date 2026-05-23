@@ -9,7 +9,7 @@ import type { PoolClient, GameRow } from '../types.js';
 type ErrorResult = { type: 'error'; status: number; error: string };
 type PlayResult = { type: 'success'; score: number; wordScores: { word: string; score: number }[]; bingo: boolean; newRack: Tile[]; gameOver: boolean; opponentId: string };
 type PassResult = { type: 'success'; gameOver: boolean; opponentId: string };
-type ExchangeResult = { type: 'success'; newRack: Tile[]; opponentId: string };
+type ExchangeResult = { type: 'success'; newRack: Tile[]; opponentId: string; gameOver: boolean };
 
 export async function handlePlayMove(
   client: PoolClient,
@@ -82,6 +82,7 @@ export async function handlePlayMove(
     board[t.row][t.col].tile = {
       letter: t.letter,
       points: t.isBlank ? 0 : (LETTER_POINTS.get(t.letter.toUpperCase()) ?? 0),
+      ...(t.isBlank ? { isBlank: true } : {}),
     };
   }
 
@@ -232,7 +233,9 @@ export async function handleExchangeMove(
   if (new Set(exchangeTiles).size !== exchangeTiles.length) {
     return { type: 'error', status: 400, error: 'Duplicate tile indices' };
   }
-  if (tileBag.length < exchangeTiles.length) {
+  // Standard rule: exchanging is only allowed while at least a full rack of
+  // tiles remains in the bag.
+  if (tileBag.length < RACK_SIZE) {
     return { type: 'error', status: 400, error: 'Not enough tiles in bag' };
   }
 
@@ -250,12 +253,31 @@ export async function handleExchangeMove(
     [tileBag[i], tileBag[j]] = [tileBag[j], tileBag[i]];
   }
 
+  // An exchange is a scoreless turn: it counts toward the consecutive-scoreless
+  // limit (passes + exchanges) that ends a stalled game, rather than resetting it.
+  const newConsecutivePasses = g.consecutive_passes + 1;
+  const gameOver = newConsecutivePasses >= MAX_CONSECUTIVE_PASSES;
+  let winnerId: string | null = null;
+  let p1Score = g.player1_score;
+  let p2Score = g.player2_score;
+  if (gameOver) {
+    // Deduct each player's remaining tile points using post-exchange racks.
+    const p1Rack: Tile[] = isPlayer1 ? newRack : g.player1_rack;
+    const p2Rack: Tile[] = isPlayer1 ? g.player2_rack : newRack;
+    p1Score = g.player1_score - p1Rack.reduce((s: number, t: Tile) => s + t.points, 0);
+    p2Score = g.player2_score - p2Rack.reduce((s: number, t: Tile) => s + t.points, 0);
+    winnerId = p1Score > p2Score ? g.player1_id : p2Score > p1Score ? g.player2_id : null;
+  }
+
   const rackField = isPlayer1 ? 'player1_rack' : 'player2_rack';
 
   await client.query(
     `UPDATE games SET ${rackField} = $1, tile_bag = $2, current_turn = $3,
-     consecutive_passes = 0, updated_at = NOW() WHERE id = $4`,
-    [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1, g.id],
+     consecutive_passes = $4, player1_score = $5, player2_score = $6,
+     status = $7, winner_id = $8, updated_at = NOW() WHERE id = $9`,
+    [JSON.stringify(newRack), JSON.stringify(tileBag), g.current_turn === 1 ? 2 : 1,
+     newConsecutivePasses, p1Score, p2Score,
+     gameOver ? 'finished' : 'active', winnerId, g.id],
   );
 
   await client.query(
@@ -263,11 +285,17 @@ export async function handleExchangeMove(
     [g.id, userId],
   );
 
+  if (gameOver) {
+    const ratingChanges = await updateRatings(client, g.player1_id, g.player2_id, winnerId);
+    if (ratingChanges) await storeRatingChanges(client, g.id, ratingChanges);
+  }
+
   const opponentId = isPlayer1 ? g.player2_id : g.player1_id;
 
   return {
     type: 'success',
     newRack,
     opponentId,
+    gameOver,
   };
 }

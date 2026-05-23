@@ -50,4 +50,10 @@ describe('passwordLengthError', () => {
   it('accepts a valid password', () => {
     expect(passwordLengthError('password123')).toBeNull();
   });
+
+  it('rejects a non-string password instead of throwing', () => {
+    expect(passwordLengthError({ length: 100 } as any)).toMatch(/Password/);
+    expect(passwordLengthError(12345678 as any)).toMatch(/Password/);
+    expect(passwordLengthError(undefined as any)).toMatch(/Password/);
+  });
 });

@@ -57,9 +57,14 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
   const [exchangeMode, setExchangeMode] = useState(false);
   const [exchangeSelection, setExchangeSelection] = useState<Set<number>>(new Set());
 
+  const loadSeqRef = useRef(0);
   const loadGame = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     try {
       const data = await apiFetch<GameData>(`/games/${gameId}`);
+      // A newer load (e.g. an SSE refresh) started while this was in flight —
+      // drop this stale response so it can't overwrite fresher state.
+      if (seq !== loadSeqRef.current) return;
       setGame(data);
       // Only replace rack if tiles actually changed (preserves player's reordering)
       setRack(prev => {
@@ -83,6 +88,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
       setExchangeMode(false);
       setExchangeSelection(new Set());
     } catch (err: any) {
+      if (seq !== loadSeqRef.current) return;
       setError(err.message);
     }
   }, [gameId, assignIds]);
@@ -91,7 +97,12 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
 
   useSSE({
     opponent_moved: (data: { gameId: string }) => {
-      if (data.gameId === gameId) loadGame();
+      if (data.gameId !== gameId) return;
+      // A genuine opponent move only arrives when it becomes our turn. If it is
+      // already our turn and we have tiles staged, this is a stale/duplicate
+      // event — reloading would silently discard the in-progress move.
+      if (isMyTurnRef.current && tentativePlacementsRef.current.length > 0) return;
+      loadGame();
     },
     game_finished: (data: { gameId: string }) => {
       if (data.gameId === gameId) { loadGame(); onGameFinished?.(); }
@@ -153,6 +164,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
 
     if (tile.letter === '') {
       setPendingBlankPlacement({ row, col, rackIndex, originalTile: tile });
+      setSelectedTileIndex(null);
       return;
     }
 
@@ -222,6 +234,14 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
   const reorderRack = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
     setRack(prev => {
+      // Guard against indices captured before the rack changed mid-drag, which
+      // would otherwise splice an `undefined` tile into the rack.
+      if (
+        fromIndex < 0 || fromIndex >= prev.length ||
+        toIndex < 0 || toIndex >= prev.length
+      ) {
+        return prev;
+      }
       const next = [...prev];
       const [tile] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, tile);
@@ -287,17 +307,18 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
     setError('');
     setSubmitting(true);
     try {
-      await apiFetch(`/games/${gameId}/move`, {
+      const result = await apiFetch<{ gameOver: boolean }>(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify({ moveType: 'exchange', exchangeTiles: indices }),
       });
       await loadGame();
+      if (result.gameOver) onGameFinished?.();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSubmitting(false);
     }
-  }, [gameId, loadGame]);
+  }, [gameId, loadGame, onGameFinished]);
 
   const enterExchangeMode = useCallback(() => {
     clearPlacements();

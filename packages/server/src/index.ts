@@ -140,7 +140,10 @@ async function start() {
     console.log(`Word Garden server running on port ${PORT}`);
   });
 
+  let shuttingDown = false;
   function shutdown(signal: string) {
+    if (shuttingDown) return; // a second signal must not re-run teardown (e.g. double pool.end())
+    shuttingDown = true;
     console.log(`${signal} received, shutting down...`);
     clearInterval(cleanupInterval);
     clearInterval(sweepInterval);
@@ -149,11 +152,20 @@ async function start() {
     stopLobbyStats();
     void stopTokenVersionListener();
     server.close(() => {
-      pool.end().then(() => {
-        console.log('Shutdown complete');
-        process.exit(0);
-      });
+      pool.end()
+        .then(() => {
+          console.log('Shutdown complete');
+          process.exit(0);
+        })
+        .catch((err) => {
+          console.error('Error draining pool:', err);
+          process.exit(1);
+        });
     });
+    // SSE responses hold their keep-alive sockets open, so server.close() would
+    // otherwise never invoke its callback (and the pool would never drain) until
+    // the forced timeout. Force the remaining sockets closed.
+    server.closeAllConnections();
     setTimeout(() => {
       console.error('Forced shutdown after timeout');
       process.exit(1);

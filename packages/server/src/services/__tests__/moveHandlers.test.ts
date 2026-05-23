@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { createEmptyBoard, RACK_SIZE } from '@word-garden/shared';
+import { createEmptyBoard, RACK_SIZE, MAX_CONSECUTIVE_PASSES } from '@word-garden/shared';
 import type { Tile, TilePlacement } from '@word-garden/shared';
 import { handlePlayMove, handlePassMove, handleExchangeMove } from '../moveHandlers.js';
 import { loadDictionary } from '../dictionary.js';
@@ -9,6 +9,14 @@ function makeMockClient(): any {
   return {
     query: vi.fn(async (text: string, values?: any[]) => {
       calls.push({ text, values: values ?? [] });
+      // Answer the queries that the end-game rating update path performs so
+      // game-over branches can run to completion.
+      if (/FROM users.*FOR UPDATE/s.test(text)) {
+        return { rows: [{ id: values?.[0], rating: 1500, rating_deviation: 200, rating_volatility: 0.06 }] };
+      }
+      if (/SELECT COUNT/.test(text)) {
+        return { rows: [{ count: '1' }] };
+      }
       return { rows: [], rowCount: 0 };
     }),
     calls,
@@ -206,6 +214,39 @@ describe('moveHandlers', () => {
       const g = makeGameRow({ tile_bag: [{ letter: 'X', points: 8 }] });
       const result = await handleExchangeMove(client, g, 'user-1', [0, 1]);
       expect(result).toEqual({ type: 'error', status: 400, error: 'Not enough tiles in bag' });
+    });
+
+    it('rejects exchange when fewer than a full rack remains in the bag', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ tile_bag: makeRack('ABCDEF') }); // 6 tiles, below RACK_SIZE
+      const result = await handleExchangeMove(client, g, 'user-1', [0]);
+      expect(result).toEqual({ type: 'error', status: 400, error: 'Not enough tiles in bag' });
+    });
+
+    it('counts as a scoreless turn and ends the game on the final consecutive pass/exchange', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ consecutive_passes: MAX_CONSECUTIVE_PASSES - 1 });
+      const result = await handleExchangeMove(client, g, 'user-1', [0]);
+      expect(result).toMatchObject({ type: 'success', gameOver: true });
+    });
+
+    it('does not end the game when below the scoreless-turn limit', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ consecutive_passes: 0 });
+      const result = await handleExchangeMove(client, g, 'user-1', [0]);
+      expect(result).toMatchObject({ type: 'success', gameOver: false });
+    });
+
+    it('persists an incremented consecutive_passes rather than resetting to zero', async () => {
+      const client = makeMockClient();
+      const g = makeGameRow({ consecutive_passes: 2 });
+      await handleExchangeMove(client, g, 'user-1', [0]);
+      const update = client.calls.find(
+        (c: any) => /UPDATE games SET/.test(c.text) && /consecutive_passes/.test(c.text),
+      );
+      expect(update).toBeDefined();
+      expect(update.values).toContain(3);
+      expect(update.text).not.toMatch(/consecutive_passes = 0/);
     });
 
     it('returns error for too many exchange tiles', async () => {

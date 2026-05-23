@@ -6,6 +6,7 @@ import { BlankTilePicker } from '../components/BlankTilePicker.js';
 import { useGame } from '../hooks/useGame.js';
 import { TileDragProvider } from '../context/TileDragContext.js';
 import { GameLoadState } from './GameLoadState.js';
+import { cellFromPoint } from '../components/dragLogic.js';
 import styles from './Game.module.css';
 
 export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
@@ -42,16 +43,11 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
   } = useGame(id!, onGameFinished);
 
   const handleRackDropOutside = useCallback((rackIndex: number, clientX: number, clientY: number) => {
-    // The dragged tile is visually at the pointer position (z-index: 10),
-    // so elementFromPoint returns it instead of the board cell underneath.
-    // Use elementsFromPoint to look through all layers.
-    const elements = document.elementsFromPoint(clientX, clientY);
-    const el = elements.find(e => e instanceof HTMLElement && e.dataset.row !== undefined) as HTMLElement | undefined;
-    if (!el) return;
-    const row = parseInt(el.dataset.row!, 10);
-    const col = parseInt(el.dataset.col!, 10);
-    if (isNaN(row) || isNaN(col)) return;
-    placeTileFromRack(row, col, rackIndex);
+    // Same DOM hit-test the board uses, so rack-to-board and board-to-board
+    // drops resolve to identical cells.
+    const pos = cellFromPoint(clientX, clientY);
+    if (!pos) return;
+    placeTileFromRack(pos.row, pos.col, rackIndex);
   }, [placeTileFromRack]);
 
   if (!game) {
