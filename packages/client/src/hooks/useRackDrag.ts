@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, type CSSProperties } from 'react';
+import { dragTileScale, dragTileTranslate } from '../components/dragLogic.js';
 
 interface DragState {
   dragIndex: number | null;
@@ -15,7 +16,7 @@ interface UseRackDragOptions {
 
 export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDropOutside }: UseRackDragOptions) {
   const [dragState, setDragState] = useState<DragState>({ dragIndex: null, overIndex: null });
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [pointerPos, setPointerPos] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
 
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -24,6 +25,8 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDro
   const didDragRef = useRef(false);
   const dragIndexRef = useRef<number | null>(null);
   const overIndexRef = useRef<number | null>(null);
+  // Scale that shrinks the floating tile to board-cell size, measured at drag start.
+  const dragScaleRef = useRef(1);
 
   const hitTest = useCallback((clientX: number, clientY: number): number | null => {
     const rects = rectsRef.current;
@@ -38,7 +41,7 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDro
 
   const cleanup = useCallback(() => {
     setDragState({ dragIndex: null, overIndex: null });
-    setDragOffset(null);
+    setPointerPos(null);
     startPosRef.current = null;
     didDragRef.current = false;
     dragIndexRef.current = null;
@@ -55,6 +58,12 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDro
     suppressClickRef.current = false;
 
     rectsRef.current = slotRefs.current.map(el => el?.getBoundingClientRect() ?? new DOMRect());
+
+    // Size the floating tile to match a board cell. We hit-test the rendered
+    // board the same way dragLogic.cellFromPoint does, via data-row/data-col.
+    const boardCell = document.querySelector('[data-row][data-col]');
+    const boardCellWidth = boardCell?.getBoundingClientRect().width ?? 0;
+    dragScaleRef.current = dragTileScale(boardCellWidth, rectsRef.current[index]?.width ?? 0);
 
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [disabled]);
@@ -73,7 +82,7 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDro
       onDragStart?.(dragIndexRef.current);
     }
 
-    setDragOffset({ x: dx, y: dy });
+    setPointerPos({ x: e.clientX, y: e.clientY });
 
     const hit = hitTest(e.clientX, e.clientY);
     if (hit !== null && hit !== overIndexRef.current) {
@@ -113,11 +122,15 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDro
     const { dragIndex, overIndex } = dragState;
     if (dragIndex === null || overIndex === null) return {};
 
-    // The dragged tile follows the pointer
+    // The dragged tile shrinks to board-cell size and centers on the cursor,
+    // so it sits on the exact cell it will drop into.
     if (index === dragIndex) {
-      if (dragOffset) {
+      const rect = rectsRef.current[dragIndex];
+      if (pointerPos && rect) {
+        const slotCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        const t = dragTileTranslate(pointerPos, slotCenter);
         return {
-          transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) scale(1.05)`,
+          transform: `translate(${t.x}px, ${t.y}px) scale(${dragScaleRef.current})`,
           transition: 'none',
           zIndex: 10,
           position: 'relative',
@@ -150,7 +163,7 @@ export function useRackDrag({ onReorder, disabled, onDragStart, onDragEnd, onDro
       transform: `translateX(${shift}px)`,
       transition: 'transform 0.15s ease',
     };
-  }, [dragState, dragOffset]);
+  }, [dragState, pointerPos]);
 
   return {
     dragState,
