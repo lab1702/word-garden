@@ -50,6 +50,7 @@
   --radius-lg: 12px;
 
   /* Typography */
-  --font-main: 'Georgia', serif;
-  --font-mono: 'Courier New', monospace;
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-main: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Inter Variable', system-ui, sans-serif;
 }
