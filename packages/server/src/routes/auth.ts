@@ -14,6 +14,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { containsProfanity } from '../services/profanityFilter.js';
 import { sendEvent, broadcastEvent, disconnectUser } from '../services/sse.js';
 import { invalidateTokenVersion } from '../services/tokenVersionCache.js';
+import { verifyPassword, passwordLengthError } from '../services/passwordAuth.js';
 import { updateRatings, storeRatingChanges } from '../services/ratings.js';
 import type { CookieOptions } from 'express';
 
@@ -71,8 +72,9 @@ router.post('/register/password', async (req, res) => {
       res.status(400).json({ error: 'Username contains inappropriate language' });
       return;
     }
-    if (password.length < 8 || password.length > 72) {
-      res.status(400).json({ error: 'Password must be between 8 and 72 characters' });
+    const pwError = passwordLengthError(password);
+    if (pwError) {
+      res.status(400).json({ error: pwError });
       return;
     }
 
@@ -104,18 +106,11 @@ router.post('/login/password', async (req, res) => {
     }
 
     const result = await pool.query('SELECT id, username, password_hash, rating, token_version FROM users WHERE username = $1', [username]);
-    if (result.rows.length === 0) {
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
     const user = result.rows[0];
-    if (!user.password_hash) {
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
-
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
+    // Always run a bcrypt comparison (against a dummy hash when the user or
+    // password_hash is missing) so response timing cannot enumerate usernames.
+    const valid = await verifyPassword(user?.password_hash, password);
+    if (!user || !valid) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
@@ -349,8 +344,9 @@ router.put('/password', requireAuth, async (req, res) => {
       res.status(400).json({ error: 'Current and new password required' });
       return;
     }
-    if (newPassword.length < 8 || newPassword.length > 72) {
-      res.status(400).json({ error: 'New password must be between 8 and 72 characters' });
+    const pwError = passwordLengthError(newPassword);
+    if (pwError) {
+      res.status(400).json({ error: pwError });
       return;
     }
 
