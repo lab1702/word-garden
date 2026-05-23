@@ -4,6 +4,7 @@ import { useTileDrag } from '../context/TileDragContext.js';
 import styles from './Board.module.css';
 import { LETTER_POINTS, BOARD_SIZE, CENTER } from '@word-garden/shared';
 import type { BoardCell, TilePlacement, Tile as TileType } from '@word-garden/shared';
+import { resolveDrop } from './dragLogic.js';
 
 interface BoardProps {
   board: BoardCell[][];
@@ -71,24 +72,27 @@ export function Board({ board, tentativePlacements, onCellClick, onDropFromRack,
     if (!dragState) return;
 
     const boardEl = boardRef.current;
-    if (boardEl) {
-      const pos = getCellFromPointer(e, boardEl);
-      if (pos) {
-        const cell = board[pos.row][pos.col];
-        const hasTentative = tentativePlacements.some(t => t.row === pos.row && t.col === pos.col);
-        if (!cell.tile && !hasTentative) {
-          if (dragState.source.type === 'rack' && onDropFromRack) {
-            onDropFromRack(pos.row, pos.col, dragState.source.index);
-          } else if (dragState.source.type === 'board' && onMoveTentative) {
-            onMoveTentative(dragState.source.row, dragState.source.col, pos.row, pos.col);
-          }
-        }
-      }
+    const pos = boardEl ? getCellFromPointer(e, boardEl) : null;
+    const targetBlocked = pos
+      ? (!!board[pos.row][pos.col].tile || tentativePlacements.some(t => t.row === pos.row && t.col === pos.col))
+      : false;
+
+    const result = resolveDrop(pos, targetBlocked, dragState.source);
+    switch (result.action) {
+      case 'placeFromRack':
+        onDropFromRack?.(result.row, result.col, result.rackIndex);
+        break;
+      case 'moveTentative':
+        onMoveTentative?.(result.fromRow, result.fromCol, result.toRow, result.toCol);
+        break;
+      case 'returnToRack':
+        onReturnToRack?.(result.row, result.col);
+        break;
     }
 
     setHoverCell(null);
     endDrag();
-  }, [dragState, board, tentativePlacements, onDropFromRack, onMoveTentative, endDrag]);
+  }, [dragState, board, tentativePlacements, onDropFromRack, onMoveTentative, onReturnToRack, endDrag]);
 
   const handlePointerLeave = useCallback(() => {
     setHoverCell(null);
