@@ -9,7 +9,7 @@
 }
 
 .picker {
-  background: var(--color-surface-raised);
+  background: var(--gradient-surface-raised);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   max-width: 320px;
