@@ -4,26 +4,39 @@
   --color-surface: #1c1c32;
   --color-surface-raised: #252542;
   --color-surface-hover: #2e2e4d;
+  --gradient-surface-raised: linear-gradient(180deg, #26264a, #1e1e38);
+  --gradient-header: linear-gradient(180deg, #1f1f38, #181828);
 
-  /* Board */
-  --color-board: #342e18;
-  --color-cell: #22223a;
+  /* Board & rack */
+  --color-board: #342e18; /* retained fallback; superseded by gradients below */
+  --gradient-board: linear-gradient(180deg, #2a2a50, #1a1a32);
+  --gradient-rack: linear-gradient(180deg, #2c2618, #221d12);
+  --color-cell: #1c1c34;
   --color-cell-hover: #2c2c48;
 
   /* Tiles */
-  --color-tile: #d4ad4e;
-  --color-tile-text: #12121f;
+  --color-tile: #e0bb55;
+  --color-tile-hi: #f4d889;
+  --color-tile-lo: #c79a36;
+  --color-tile-text: #1a1505;
+  --gradient-tile: linear-gradient(160deg, var(--color-tile-hi) 0%, var(--color-tile) 45%, var(--color-tile-lo) 100%);
+  --gradient-tile-blank: linear-gradient(160deg, #efe7d4, #cfc3a6);
 
-  /* Premium squares */
+  /* Premium squares (flat fallbacks + beveled gradients) */
   --color-premium-dw: #9c3a50;
   --color-premium-tw: #cc3535;
   --color-premium-dl: #3a6a95;
   --color-premium-tl: #3868b8;
+  --prem-tw: radial-gradient(circle at 50% 32%, #e44545, #9e2424);
+  --prem-dw: radial-gradient(circle at 50% 32%, #bd4c66, #7e2d40);
+  --prem-tl: radial-gradient(circle at 50% 32%, #4f86d8, #2f5aa0);
+  --prem-dl: radial-gradient(circle at 50% 32%, #5fa3d8, #386f9e);
 
   /* Accent */
-  --color-accent: #7fb836;
-  --color-accent-muted: rgba(127, 184, 54, 0.12);
-  --color-gold: #d4ad4e;
+  --color-accent: #8cc63f;
+  --color-accent-muted: rgba(140, 198, 63, 0.12);
+  --gradient-accent: linear-gradient(180deg, #95d143, #6fa028);
+  --color-gold: #e8c873;
 
   /* Text */
   --color-text: #eae7df;
@@ -37,12 +50,22 @@
   /* Semantic */
   --color-danger: #e86464;
   --color-invite-bg: #1e2e1e;
+  --gradient-ghost: linear-gradient(180deg, #2a2a48, #20203a);
+  --gradient-danger: linear-gradient(180deg, #3a2222, #2a1818);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-glow-accent: 0 0 12px rgba(127, 184, 54, 0.2);
+  --shadow-glow-accent: 0 0 12px rgba(140, 198, 63, 0.3);
+  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-board: 0 12px 34px rgba(0, 0, 0, 0.6), inset 0 2px 1px rgba(255, 255, 255, 0.06), inset 0 -3px 8px rgba(0, 0, 0, 0.5);
+
+  /* Bevels */
+  --bevel-tile: 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 1.5px 1px rgba(255, 255, 255, 0.65), inset 0 -1.5px 2px rgba(120, 80, 20, 0.5);
+  --bevel-cell: inset 0 1.5px 4px rgba(0, 0, 0, 0.55);
+  --bevel-prem: inset 0 1px 2px rgba(255, 255, 255, 0.28), inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+  --bevel-button: 0 3px 8px rgba(0, 0, 0, 0.4), inset 0 1.5px 1px rgba(255, 255, 255, 0.4), inset 0 -1.5px 2px rgba(40, 70, 10, 0.5);
 
   /* Radii */
   --radius-sm: 4px;

@@ -12,7 +12,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--font-main);
-  background: radial-gradient(ellipse at 50% 0%, #1a1a30 0%, var(--color-bg) 70%);
+  background: radial-gradient(ellipse at 50% -5%, #20203e 0%, #0e0e18 70%);
   background-attachment: fixed;
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
