@@ -12,15 +12,33 @@ let connStr: string | undefined;
 // Pure handler so it can be unit-tested without a live connection.
 export function handleTokenVersionNotification(msg: { channel: string; payload?: string }): void {
   if (msg.channel !== TOKEN_VERSION_CHANNEL || !msg.payload) return;
-  // Delete the cache entry; the next requireAuth re-reads the true version from the DB.
-  invalidateTokenVersion(msg.payload);
+  // Payload is either "<userId>" (plain invalidation) or "<userId>:<version>".
+  // UUID userIds contain no colon, so the first colon separates the version.
+  // When a version is supplied we set it directly: setCachedTokenVersion's
+  // monotonic guard then prevents an in-flight stale read from repopulating the
+  // old version, closing the cross-process revocation window. Without a version
+  // we delete and let the next requireAuth re-read the true version from the DB.
+  const colonIdx = msg.payload.indexOf(':');
+  if (colonIdx === -1) {
+    invalidateTokenVersion(msg.payload);
+    return;
+  }
+  const userId = msg.payload.slice(0, colonIdx);
+  const version = Number(msg.payload.slice(colonIdx + 1));
+  if (Number.isInteger(version)) {
+    invalidateTokenVersion(userId, version);
+  } else {
+    invalidateTokenVersion(userId);
+  }
 }
 
 export async function notifyTokenVersionChanged(
   executor: { query: (sql: string, params: unknown[]) => Promise<unknown> },
   userId: string,
+  version?: number,
 ): Promise<void> {
-  await executor.query('SELECT pg_notify($1, $2)', [TOKEN_VERSION_CHANNEL, userId]);
+  const payload = version === undefined ? userId : `${userId}:${version}`;
+  await executor.query('SELECT pg_notify($1, $2)', [TOKEN_VERSION_CHANNEL, payload]);
 }
 
 async function connect(): Promise<void> {

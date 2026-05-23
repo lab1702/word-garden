@@ -61,7 +61,7 @@ const CHALLENGE_TTL = 2 * 60 * 1000; // 2 minutes
 router.post('/register/password', async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) {
+    if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
       res.status(400).json({ error: 'Username and password required' });
       return;
     }
@@ -101,7 +101,7 @@ router.post('/register/password', async (req, res) => {
 router.post('/login/password', async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) {
+    if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
       res.status(400).json({ error: 'Username and password required' });
       return;
     }
@@ -129,7 +129,7 @@ router.post('/login/password', async (req, res) => {
 router.post('/register/passkey/options', async (req, res) => {
   try {
     const { username } = req.body;
-    if (!username) {
+    if (typeof username !== 'string' || !username) {
       res.status(400).json({ error: 'Username required' });
       return;
     }
@@ -238,7 +238,7 @@ router.post('/register/passkey/verify', async (req, res) => {
 router.post('/login/passkey/options', async (req, res) => {
   try {
     const { username } = req.body;
-    if (!username) {
+    if (typeof username !== 'string' || !username) {
       res.status(400).json({ error: 'Username required' });
       return;
     }
@@ -304,6 +304,8 @@ router.post('/login/passkey/verify', async (req, res) => {
     }
 
     const stored = credResult.rows[0];
+    // counter is a BIGINT and comes back from pg as a string; use a number.
+    const storedCounter = Number(stored.counter);
 
     const verification = await verifyAuthenticationResponse({
       response: credential,
@@ -313,7 +315,7 @@ router.post('/login/passkey/verify', async (req, res) => {
       credential: {
         id: stored.credential_id,
         publicKey: stored.public_key,
-        counter: stored.counter,
+        counter: storedCounter,
       },
     });
 
@@ -322,10 +324,19 @@ router.post('/login/passkey/verify', async (req, res) => {
       return;
     }
 
+    // Defense-in-depth clone detection: a non-increasing signature counter means
+    // the authenticator may have been cloned/replayed. Authenticators that never
+    // implement a counter legitimately stay at 0, so only enforce once non-zero.
+    const newCounter = verification.authenticationInfo.newCounter;
+    if (newCounter > 0 && newCounter <= storedCounter) {
+      res.status(401).json({ error: 'Verification failed' });
+      return;
+    }
+
     // Update counter
     await pool.query(
       'UPDATE user_credentials SET counter = $1 WHERE id = $2',
-      [verification.authenticationInfo.newCounter, stored.id],
+      [newCounter, stored.id],
     );
 
     const token = createToken({ userId: stored.user_id, username: stored.username, tokenVersion: stored.token_version });
@@ -341,7 +352,7 @@ router.put('/password', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || !currentPassword || !newPassword) {
       res.status(400).json({ error: 'Current and new password required' });
       return;
     }
@@ -383,8 +394,9 @@ router.put('/password', requireAuth, async (req, res) => {
     // Disconnect any existing SSE connections (they hold stale tokens)
     disconnectUser(userId);
     invalidateTokenVersion(userId, newVersion);
-    // Best-effort cross-process invalidation; never fail the request on a NOTIFY error.
-    try { await notifyTokenVersionChanged(pool, userId); } catch (err) { console.error('pg_notify token version failed:', err); }
+    // Best-effort cross-process invalidation; carry the new version so other
+    // processes set it directly and the monotonic guard blocks stale repopulation.
+    try { await notifyTokenVersionChanged(pool, userId, newVersion); } catch (err) { console.error('pg_notify token version failed:', err); }
 
     res.json({ ok: true });
   } catch (err) {

@@ -27,7 +27,13 @@ export function useSSE(handlers: Record<string, EventHandler>): { connected: boo
       for (const event of eventKeys.split(',')) {
         if (!event) continue;
         es.addEventListener(event, (e) => {
-          const data = JSON.parse((e as MessageEvent).data);
+          let data: unknown;
+          try {
+            data = JSON.parse((e as MessageEvent).data);
+          } catch {
+            // Ignore a malformed payload rather than throwing inside the listener.
+            return;
+          }
           handlersRef.current[event]?.(data);
         });
       }

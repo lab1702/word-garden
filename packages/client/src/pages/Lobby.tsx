@@ -121,10 +121,11 @@ export function Lobby({ userId, username, rating, onGameFinished }: LobbyProps) 
   const cancelMatch = async () => {
     try {
       await apiFetch('/games/matchmake', { method: 'DELETE' });
+      // Only clear the searching state once the server confirms removal from the
+      // queue; otherwise the UI would say "not searching" while still queued.
+      setMatchmaking(false);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setMatchmaking(false);
     }
   };
 

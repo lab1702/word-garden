@@ -1,6 +1,7 @@
 export interface Tile {
   letter: string; // A-Z or '' for blank
   points: number;
+  isBlank?: boolean; // true once a blank has been committed to the board under an assigned letter
 }
 
 export interface PlacedTile extends Tile {
