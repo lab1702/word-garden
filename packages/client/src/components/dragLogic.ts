@@ -19,6 +19,31 @@ export function cellFromPoint(clientX: number, clientY: number): { row: number; 
   return { row, col };
 }
 
+/** Fallback scale when the board can't be measured — a subtle "lift" cue. */
+const LIFT_SCALE = 1.05;
+
+/**
+ * Scale to shrink a dragged rack tile down to the size of a board cell, so the
+ * floating tile matches where it will land. Falls back to a subtle lift when
+ * either dimension is unmeasurable (e.g. the board isn't rendered).
+ */
+export function dragTileScale(boardCellWidth: number, rackSlotWidth: number): number {
+  if (boardCellWidth > 0 && rackSlotWidth > 0) return boardCellWidth / rackSlotWidth;
+  return LIFT_SCALE;
+}
+
+/**
+ * Translate offset that centers the dragged tile on the cursor. Because the slot
+ * is scaled around its own center, moving that center onto the pointer puts the
+ * shrunk tile directly over the cell the cursor is hovering.
+ */
+export function dragTileTranslate(
+  pointer: { x: number; y: number },
+  slotCenter: { x: number; y: number },
+): { x: number; y: number } {
+  return { x: pointer.x - slotCenter.x, y: pointer.y - slotCenter.y };
+}
+
 export type DropResult =
   | { action: 'placeFromRack'; row: number; col: number; rackIndex: number }
   | { action: 'moveTentative'; fromRow: number; fromCol: number; toRow: number; toCol: number }
