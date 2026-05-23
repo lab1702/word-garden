@@ -2,6 +2,7 @@
 import bcrypt from 'bcrypt';
 import pg from 'pg';
 import { passwordLengthError } from '../services/passwordAuth.js';
+import { notifyTokenVersionChanged } from '../services/tokenVersionListener.js';
 
 const [username, password] = process.argv.slice(2);
 
@@ -32,6 +33,7 @@ try {
     process.exit(1);
   }
 
+  await notifyTokenVersionChanged(pool, result.rows[0].id);
   console.log(`Password updated for ${result.rows[0].username}`);
 } catch (err) {
   console.error('Error:', err);

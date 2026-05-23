@@ -14,6 +14,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { containsProfanity } from '../services/profanityFilter.js';
 import { sendEvent, broadcastEvent, disconnectUser } from '../services/sse.js';
 import { invalidateTokenVersion } from '../services/tokenVersionCache.js';
+import { notifyTokenVersionChanged } from '../services/tokenVersionListener.js';
 import { verifyPassword, passwordLengthError } from '../services/passwordAuth.js';
 import { updateRatings, storeRatingChanges } from '../services/ratings.js';
 import type { CookieOptions } from 'express';
@@ -382,6 +383,8 @@ router.put('/password', requireAuth, async (req, res) => {
     // Disconnect any existing SSE connections (they hold stale tokens)
     disconnectUser(userId);
     invalidateTokenVersion(userId, newVersion);
+    // Best-effort cross-process invalidation; never fail the request on a NOTIFY error.
+    try { await notifyTokenVersionChanged(pool, userId); } catch (err) { console.error('pg_notify token version failed:', err); }
 
     res.json({ ok: true });
   } catch (err) {
@@ -444,6 +447,8 @@ router.delete('/account', requireAuth, async (req, res) => {
 
     disconnectUser(userId);
     invalidateTokenVersion(userId);
+    // Best-effort cross-process invalidation; never fail the request on a NOTIFY error.
+    try { await notifyTokenVersionChanged(pool, userId); } catch (err) { console.error('pg_notify token version failed:', err); }
     res.clearCookie('token', CLEAR_COOKIE_OPTIONS);
     res.json({ ok: true });
   } catch (err) {
