@@ -11,7 +11,7 @@ import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
 import leaderboardRouter from './routes/leaderboard.js';
-import { addClient, closeAllConnections, isAtCapacity, sendLobbyStats } from './services/sse.js';
+import { addClient, closeAllConnections, isAtCapacity, sendLobbyStats, stopLobbyStats } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
 import { sweepQueue } from './services/matchmaking.js';
 import { startCacheCleanup } from './services/tokenVersionCache.js';
@@ -144,6 +144,7 @@ async function start() {
     clearInterval(sweepInterval);
     clearInterval(cacheInterval);
     closeAllConnections();
+    stopLobbyStats();
     server.close(() => {
       pool.end().then(() => {
         console.log('Shutdown complete');

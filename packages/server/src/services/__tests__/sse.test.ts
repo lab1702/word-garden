@@ -193,4 +193,19 @@ describe('sse', () => {
       expect.stringContaining('"matchmakingPlayers":1')
     );
   });
+
+  it('stopLobbyStats prevents a pending lobby-stats query from firing', async () => {
+    vi.useFakeTimers();
+    const { default: pool } = await import('../../db/pool.js');
+    (pool.query as any).mockResolvedValue({ rows: [{ count: 0 }] });
+    (pool.query as any).mockClear();
+    const mod = await import('../sse.js');
+
+    mod.broadcastLobbyStats();   // schedules the 500ms debounce timer
+    mod.stopLobbyStats();        // must cancel it
+
+    await vi.advanceTimersByTimeAsync(600);
+    expect(pool.query).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });
