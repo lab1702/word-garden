@@ -56,4 +56,25 @@ describe('updateRatings', () => {
     const result = await updateRatings(client as any, null, 'bbb', null);
     expect(result).toBeUndefined();
   });
+
+  it('computes rank with a stable id tie-breaker', async () => {
+    const client = createMockClient();
+    client.pushResult({ rows: [{ id: 'aaa', rating: 1500, rating_deviation: 200, rating_volatility: 0.06 }] });
+    client.pushResult({ rows: [{ id: 'bbb', rating: 1500, rating_deviation: 200, rating_volatility: 0.06 }] });
+    client.pushResult({ rows: [{ count: '0' }] }); // p1 rank before
+    client.pushResult({ rows: [{ count: '0' }] }); // p2 rank before
+    client.pushResult({ rows: [] });               // update p1
+    client.pushResult({ rows: [] });               // update p2
+    client.pushResult({ rows: [{ count: '0' }] }); // p1 rank after
+    client.pushResult({ rows: [{ count: '0' }] }); // p2 rank after
+
+    await updateRatings(client as any, 'aaa', 'bbb', 'aaa');
+
+    const rankCalls: any[][] = client.query.mock.calls.filter((c: any[]) => /COUNT\(\*\)/.test(c[0]));
+    expect(rankCalls.length).toBeGreaterThan(0);
+    for (const call of rankCalls) {
+      expect(call[0]).toMatch(/id <\s*\$2/);     // tie-break clause present
+      expect(call[1]).toHaveLength(2);            // [rating, userId]
+    }
+  });
 });

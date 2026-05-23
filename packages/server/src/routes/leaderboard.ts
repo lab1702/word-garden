@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       `SELECT username, rating
        FROM users
        WHERE rating_deviation < 350
-       ORDER BY rating DESC
+       ORDER BY rating DESC, id ASC
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );

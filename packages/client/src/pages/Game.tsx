@@ -5,6 +5,7 @@ import { Rack } from '../components/Rack.js';
 import { BlankTilePicker } from '../components/BlankTilePicker.js';
 import { useGame } from '../hooks/useGame.js';
 import { TileDragProvider } from '../context/TileDragContext.js';
+import { GameLoadState } from './GameLoadState.js';
 import styles from './Game.module.css';
 
 export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
@@ -54,7 +55,7 @@ export function Game({ onGameFinished }: { onGameFinished?: () => void }) {
   }, [placeTileFromRack]);
 
   if (!game) {
-    return <div className={styles.loading}>Loading game...</div>;
+    return <GameLoadState error={error} onBack={() => navigate('/')} />;
   }
 
   const myScore = game.playerNumber === 1 ? game.player1Score : game.player2Score;

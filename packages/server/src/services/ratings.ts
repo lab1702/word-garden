@@ -6,10 +6,14 @@ export interface RatingChangeResult {
   player2: { ratingBefore: number; ratingAfter: number; rankBefore: number; rankAfter: number };
 }
 
-async function getPlayerRank(client: PoolClient, rating: number): Promise<number> {
+async function getPlayerRank(client: PoolClient, rating: number, userId: string): Promise<number> {
+  // Count users that sort strictly before this one under the leaderboard's
+  // (rating DESC, id ASC) ordering, so the rank matches the leaderboard position.
   const result = await client.query(
-    'SELECT COUNT(*) FROM users WHERE rating > $1 AND rating_deviation < 350',
-    [rating],
+    `SELECT COUNT(*) FROM users
+     WHERE rating_deviation < 350
+       AND (rating > $1 OR (rating = $1 AND id < $2))`,
+    [rating, userId],
   );
   return parseInt(result.rows[0].count, 10) + 1;
 }
@@ -29,8 +33,8 @@ export async function updateRatings(client: PoolClient, player1Id: string | null
   const p2RatingBefore = p2Data.rating;
 
   // Compute ranks before update
-  const p1RankBefore = await getPlayerRank(client, p1RatingBefore);
-  const p2RankBefore = await getPlayerRank(client, p2RatingBefore);
+  const p1RankBefore = await getPlayerRank(client, p1RatingBefore, player1Id);
+  const p2RankBefore = await getPlayerRank(client, p2RatingBefore, player2Id);
 
   const outcome = winnerId === player1Id ? 1 : winnerId === player2Id ? -1 : 0;
   const newRatings = calculateNewRatings(
@@ -49,8 +53,8 @@ export async function updateRatings(client: PoolClient, player1Id: string | null
   );
 
   // Compute ranks after update
-  const p1RankAfter = await getPlayerRank(client, newRatings.player1.rating);
-  const p2RankAfter = await getPlayerRank(client, newRatings.player2.rating);
+  const p1RankAfter = await getPlayerRank(client, newRatings.player1.rating, player1Id);
+  const p2RankAfter = await getPlayerRank(client, newRatings.player2.rating, player2Id);
 
   return {
     player1: { ratingBefore: p1RatingBefore, ratingAfter: newRatings.player1.rating, rankBefore: p1RankBefore, rankAfter: p1RankAfter },

@@ -85,18 +85,38 @@ const ALLOWED_SUBSTRINGS = new Set([
 
 export function containsProfanity(username: string): boolean {
   const lower = username.toLowerCase();
-  // Check if the username contains a known safe substring that would otherwise trigger a false positive
+
+  // Mark character ranges belonging to a known-safe substring so a blocked
+  // word appearing *inside* such a word (e.g. "ass" in "grass", "cunt" in
+  // "scunthorpe") is exempt — but unrelated profanity elsewhere is still caught.
+  const covered = new Array<boolean>(lower.length).fill(false);
   for (const safe of ALLOWED_SUBSTRINGS) {
-    if (lower.includes(safe)) return false;
+    let from = 0;
+    for (;;) {
+      const idx = lower.indexOf(safe, from);
+      if (idx === -1) break;
+      for (let i = idx; i < idx + safe.length; i++) covered[i] = true;
+      from = idx + 1;
+    }
   }
+
+  const isCovered = (start: number, end: number): boolean => {
+    for (let i = start; i < end; i++) if (!covered[i]) return false;
+    return true;
+  };
+
   return BLOCKED_WORDS.some((word) => {
-    const idx = lower.indexOf(word);
-    if (idx === -1) return false;
-    // Always block the worst slurs regardless of surrounding characters
-    if (ALWAYS_BLOCK.has(word)) return true;
-    // Check word boundaries: start/end of string or non-alphanumeric neighbor
-    const before = idx === 0 || !/[a-z0-9]/.test(lower[idx - 1]);
-    const after = idx + word.length >= lower.length || !/[a-z0-9]/.test(lower[idx + word.length]);
-    return before && after;
+    let from = 0;
+    for (;;) {
+      const idx = lower.indexOf(word, from);
+      if (idx === -1) return false;
+      from = idx + 1;
+      const end = idx + word.length;
+      if (isCovered(idx, end)) continue; // benign occurrence, keep scanning
+      if (ALWAYS_BLOCK.has(word)) return true;
+      const before = idx === 0 || !/[a-z0-9]/.test(lower[idx - 1]);
+      const after = end >= lower.length || !/[a-z0-9]/.test(lower[end]);
+      if (before && after) return true;
+    }
   });
 }

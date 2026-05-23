@@ -78,6 +78,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
         return prev;
       });
       setTentativePlacements([]);
+      setPendingBlankPlacement(null);
       setSelectedTileIndex(null);
       setExchangeMode(false);
       setExchangeSelection(new Set());
@@ -171,7 +172,7 @@ export function useGame(gameId: string, onGameFinished?: () => void) {
       ...prev,
       { row, col, letter, isBlank: true, rackIndex, originalTile },
     ]);
-    setRack(prev => prev.filter((_, i) => i !== rackIndex));
+    setRack(prev => prev.filter(t => t._id !== originalTile._id));
     setPendingBlankPlacement(null);
   }, [pendingBlankPlacement]);
 

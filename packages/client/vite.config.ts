@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -10,5 +11,12 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:3000',
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: false,
+    setupFiles: ['./vitest.setup.ts'],
+    // Unit tests live under src/; the Playwright suite in e2e/ has its own runner.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 });

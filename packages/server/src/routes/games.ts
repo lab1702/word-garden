@@ -2,8 +2,9 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import pool from '../db/pool.js';
 import { requireAuth } from '../middleware/auth.js';
-import { initializeGame, drawTilesForPlayer2 } from '../services/gameEngine.js';
-import { enterQueue, leaveQueue, generateInviteCode } from '../services/matchmaking.js';
+import { drawTilesForPlayer2 } from '../services/gameEngine.js';
+import { enterQueue, leaveQueue } from '../services/matchmaking.js';
+import { createWaitingGame, WaitingGameLimitError } from '../services/inviteGames.js';
 import { sendEvent, broadcastEvent } from '../services/sse.js';
 import { updateRatings, storeRatingChanges } from '../services/ratings.js';
 import { handlePlayMove, handlePassMove, handleExchangeMove } from '../services/moveHandlers.js';
@@ -27,38 +28,13 @@ const INVITE_CODE_RE = /^GARDEN-[A-HJ-NP-Z2-9]{6}$/;
 // POST /games — create a new game with invite code
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.userId;
-
-    const waitingCount = await pool.query(
-      "SELECT COUNT(*) FROM games WHERE player1_id = $1 AND status = 'waiting'",
-      [userId],
-    );
-    if (parseInt(waitingCount.rows[0].count, 10) >= 5) {
-      res.status(400).json({ error: 'Too many waiting games (max 5)' });
+    const { id, inviteCode } = await createWaitingGame(req.user!.userId);
+    res.json({ id, inviteCode });
+  } catch (err) {
+    if (err instanceof WaitingGameLimitError) {
+      res.status(400).json({ error: err.message });
       return;
     }
-
-    const game = initializeGame();
-
-    let result;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const inviteCode = generateInviteCode();
-      try {
-        result = await pool.query(
-          `INSERT INTO games (player1_id, board_state, tile_bag, player1_rack, invite_code, status)
-           VALUES ($1, $2, $3, $4, $5, 'waiting') RETURNING id, invite_code`,
-          [userId, JSON.stringify(game.board), JSON.stringify(game.tileBag),
-           JSON.stringify(game.player1Rack), inviteCode],
-        );
-        break;
-      } catch (err: any) {
-        if (err.code === '23505' && attempt < 2) continue;
-        throw err;
-      }
-    }
-
-    res.json({ id: result!.rows[0].id, inviteCode: result!.rows[0].invite_code });
-  } catch (err) {
     console.error('Create game error:', err);
     res.status(500).json({ error: 'Internal error' });
   }

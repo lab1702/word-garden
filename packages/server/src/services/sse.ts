@@ -92,9 +92,18 @@ export function getOnlinePlayerCount(): number {
 }
 
 let lobbyStatsTimer: ReturnType<typeof setTimeout> | null = null;
+let lobbyStatsStopped = false;
+
+export function stopLobbyStats(): void {
+  lobbyStatsStopped = true;
+  if (lobbyStatsTimer) {
+    clearTimeout(lobbyStatsTimer);
+    lobbyStatsTimer = null;
+  }
+}
 
 export function broadcastLobbyStats(): void {
-  if (lobbyStatsTimer) return;
+  if (lobbyStatsStopped || lobbyStatsTimer) return;
   lobbyStatsTimer = setTimeout(async () => {
     lobbyStatsTimer = null;
     try {

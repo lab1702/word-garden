@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import bcrypt from 'bcrypt';
 import pg from 'pg';
+import { passwordLengthError } from '../services/passwordAuth.js';
+import { notifyTokenVersionChanged } from '../services/tokenVersionListener.js';
 
 const [username, password] = process.argv.slice(2);
 
@@ -9,8 +11,9 @@ if (!username || !password) {
   process.exit(1);
 }
 
-if (password.length < 8 || password.length > 72) {
-  console.error('Password must be between 8 and 72 characters');
+const pwError = passwordLengthError(password);
+if (pwError) {
+  console.error(pwError);
   process.exit(1);
 }
 
@@ -30,6 +33,7 @@ try {
     process.exit(1);
   }
 
+  await notifyTokenVersionChanged(pool, result.rows[0].id);
   console.log(`Password updated for ${result.rows[0].username}`);
 } catch (err) {
   console.error('Error:', err);

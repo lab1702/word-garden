@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styles from './Login.module.css';
 
 interface LoginProps {
@@ -13,8 +13,11 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const inFlight = useRef(false);
 
   const handleSubmit = async (action: 'login' | 'register') => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setError('');
     setLoading(true);
     try {
@@ -27,10 +30,13 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
       setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
+      inFlight.current = false;
     }
   };
 
   const handlePasskey = async (action: 'login' | 'register') => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setError('');
     setLoading(true);
     try {
@@ -43,6 +49,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
       setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
+      inFlight.current = false;
     }
   };
 

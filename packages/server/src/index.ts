@@ -11,10 +11,11 @@ import { loadDictionary } from './services/dictionary.js';
 import authRouter from './routes/auth.js';
 import gameRouter from './routes/games.js';
 import leaderboardRouter from './routes/leaderboard.js';
-import { addClient, closeAllConnections, isAtCapacity, sendLobbyStats } from './services/sse.js';
+import { addClient, closeAllConnections, isAtCapacity, sendLobbyStats, stopLobbyStats } from './services/sse.js';
 import { requireAuth } from './middleware/auth.js';
 import { sweepQueue } from './services/matchmaking.js';
 import { startCacheCleanup } from './services/tokenVersionCache.js';
+import { startTokenVersionListener, stopTokenVersionListener } from './services/tokenVersionListener.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const clientDist = join(__dirname, '../../client/dist');
@@ -131,6 +132,7 @@ async function start() {
   await waitForDb();
   await runMigrations();
   await loadDictionary();
+  await startTokenVersionListener();
   const cleanupInterval = setInterval(cleanupStaleRecords, 60 * 60 * 1000);
   const sweepInterval = setInterval(sweepQueue, 5000);
   const cacheInterval = startCacheCleanup();
@@ -144,6 +146,8 @@ async function start() {
     clearInterval(sweepInterval);
     clearInterval(cacheInterval);
     closeAllConnections();
+    stopLobbyStats();
+    void stopTokenVersionListener();
     server.close(() => {
       pool.end().then(() => {
         console.log('Shutdown complete');
