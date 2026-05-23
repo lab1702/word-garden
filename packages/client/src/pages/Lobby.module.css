@@ -56,14 +56,15 @@
 }
 
 .actionButton {
-  background: var(--color-accent);
-  color: #111;
+  background: var(--gradient-accent);
+  color: #10210a;
+  box-shadow: var(--bevel-button);
 }
 
 .actionButton:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bevel-button), var(--shadow-glow-accent);
 }
 
 .actionButtonCancel {
@@ -103,21 +104,21 @@
 
 .joinButton {
   padding: 0.75rem 1.5rem;
-  background: var(--color-accent);
-  color: #111;
+  background: var(--gradient-accent);
+  color: #10210a;
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-main);
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
   min-height: 44px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bevel-button);
 }
 
 .joinButton:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bevel-button), var(--shadow-glow-accent);
 }
 
 .joinButton:disabled {
@@ -190,12 +191,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: var(--color-surface-raised);
+  background: var(--gradient-surface-raised);
+  border: 1px solid #2c2c4a;
   border-radius: var(--radius-md);
   margin-bottom: 0.75rem;
   cursor: pointer;
   transition: transform 150ms ease, box-shadow 150ms ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-panel);
 }
 
 .gameCard:hover {
@@ -324,8 +326,9 @@
 
 .leaderboardRankTop {
   composes: leaderboardRank;
+  font-family: var(--font-display);
   color: var(--color-gold);
-  font-weight: bold;
+  font-weight: 900;
 }
 
 .leaderboardName {
@@ -351,10 +354,10 @@
 }
 
 .statValue {
-  font-family: var(--font-mono);
-  font-weight: bold;
-  font-size: 1.125rem;
-  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: var(--color-gold);
 }
 
 .statLabel {

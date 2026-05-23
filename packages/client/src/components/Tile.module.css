@@ -5,9 +5,9 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #dbb854 0%, var(--color-tile) 100%);
+  background: var(--gradient-tile);
   border-radius: 3px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bevel-tile);
   cursor: pointer;
   user-select: none;
   transition: transform 150ms ease, box-shadow 150ms ease;
@@ -15,19 +15,24 @@
 
 .tile:hover {
   transform: scale(1.05);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--bevel-tile), var(--shadow-lg);
+}
+
+.blank {
+  background: var(--gradient-tile-blank);
 }
 
 .selected {
   outline: 2px solid #60b0ff;
   outline-offset: 1px;
   transform: scale(1.15);
-  box-shadow: 0 0 10px rgba(96, 176, 255, 0.6), var(--shadow-md);
+  box-shadow: 0 0 10px rgba(96, 176, 255, 0.6), var(--bevel-tile);
+  z-index: 2;
 }
 
 .tentative {
-  opacity: 0.85;
-  box-shadow: 0 0 0 2px var(--color-accent);
+  opacity: 0.92;
+  box-shadow: 0 0 0 2px var(--color-accent), var(--bevel-tile);
   animation: tentativePulse 2s ease-in-out infinite;
 }
 
@@ -37,14 +42,14 @@
 }
 
 .lastMove {
-  outline: 2px solid rgba(127, 184, 54, 0.85);
+  outline: 2px solid rgba(140, 198, 63, 0.85);
   outline-offset: -1px;
-  box-shadow: 0 0 8px rgba(127, 184, 54, 0.5), var(--shadow-md);
+  box-shadow: 0 0 8px rgba(140, 198, 63, 0.5), var(--bevel-tile);
 }
 
 .letter {
-  font-family: var(--font-main);
-  font-weight: bold;
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(0.6rem, 2.5vw, 1.75rem);
   color: var(--color-tile-text);
   line-height: 1;
@@ -55,7 +60,7 @@
   bottom: 2px;
   right: 3px;
   font-size: clamp(0.45rem, 1.5vw, 0.85rem);
-  font-weight: bold;
+  font-weight: 700;
   color: var(--color-tile-text);
   font-family: var(--font-mono);
   line-height: 1;

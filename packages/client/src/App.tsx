@@ -23,6 +23,7 @@ export function App() {
         <header className={styles.header}>
           <div className={styles.headerBrand}>
             <Link to="/" className={styles.headerTitle}>Word Garden</Link>
+            <span className={styles.headerTagline}>grow your vocabulary</span>
             <span className={styles.headerUser}>
               {user.username} ({Math.round(user.rating)})
             </span>

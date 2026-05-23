@@ -51,11 +51,16 @@
   align-items: center;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md);
-  transition: background 150ms ease;
+  background: var(--gradient-surface-raised);
+  border: 1px solid #2c2c4a;
+  box-shadow: var(--shadow-panel);
+  transition: background 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 
 .activePlayer {
-  background: var(--color-accent-muted);
+  background: linear-gradient(180deg, #2a3320, #222a18);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(140, 198, 63, 0.4), var(--shadow-glow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .playerLabel {
@@ -65,9 +70,9 @@
 }
 
 .scoreValue {
-  font-size: 1.5rem;
-  font-weight: bold;
-  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 900;
+  font-family: var(--font-display);
   color: var(--color-gold);
 }
 
@@ -129,22 +134,22 @@
 
 .playButton {
   padding: 0.75rem 2rem;
-  background: var(--color-accent);
-  color: #111;
+  background: var(--gradient-accent);
+  color: #10210a;
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-main);
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
   min-height: 44px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--bevel-button);
 }
 
 .playButton:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-glow-accent);
+  box-shadow: var(--bevel-button), var(--shadow-glow-accent);
 }
 
 .playButton:disabled {
@@ -157,19 +162,20 @@
 
 .secondaryAction {
   padding: 0.75rem 1.5rem;
-  background: transparent;
+  background: var(--gradient-ghost);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-family: var(--font-main);
   cursor: pointer;
   color: var(--color-text);
   min-height: 44px;
+  box-shadow: var(--shadow-sm);
 }
 
 .secondaryAction:hover:not(:disabled) {
-  background: var(--color-surface-hover);
+  filter: brightness(1.15);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 .secondaryAction:disabled {
@@ -179,20 +185,22 @@
 
 .dangerAction {
   padding: 0.75rem 1.5rem;
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 40%);
+  background: var(--gradient-danger);
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 55%);
   border-radius: var(--radius-md);
   font-family: var(--font-main);
   cursor: pointer;
-  color: color-mix(in srgb, var(--color-danger), var(--color-text-muted) 30%);
+  color: #f0c9c9;
   min-height: 44px;
+  box-shadow: var(--shadow-sm);
 }
 
 .dangerAction:hover:not(:disabled) {
   border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: rgba(212, 88, 88, 0.1);
+  background: linear-gradient(180deg, #5a2a2a, #3a1e1e);
+  color: #fff;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .dangerAction:disabled {
@@ -211,14 +219,16 @@
 }
 
 .gameOverOverlay h2 {
-  font-family: var(--font-main);
+  font-family: var(--font-display);
+  font-weight: 900;
   color: var(--color-text);
   margin: 0 0 0.5rem;
 }
 
 .gameOverOverlay p {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.6rem;
   color: var(--color-gold);
   margin: 0 0 1rem;
 }

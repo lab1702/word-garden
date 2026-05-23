@@ -7,7 +7,7 @@
 }
 
 .card {
-  background: var(--color-surface);
+  background: var(--gradient-surface-raised);
   border-radius: var(--radius-lg);
   padding: 2.5rem;
   box-shadow: var(--shadow-lg);
@@ -29,12 +29,13 @@
 }
 
 .title {
-  font-family: var(--font-main);
+  font-family: var(--font-display);
+  font-weight: 900;
   color: var(--color-text);
   text-align: center;
   margin: 0 0 0.25rem;
-  font-size: 2.25rem;
-  letter-spacing: 0.02em;
+  font-size: 2.4rem;
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
@@ -92,27 +93,27 @@
 }
 
 .primaryButton {
-  background: var(--color-accent);
-  color: #111;
+  background: var(--gradient-accent);
+  color: #10210a;
   border: none;
-  font-weight: bold;
-  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+  box-shadow: var(--bevel-button);
 }
 
 .primaryButton:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--bevel-button), var(--shadow-glow-accent);
 }
 
 .secondaryButton {
-  background: transparent;
+  background: var(--gradient-ghost);
   color: var(--color-text);
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
 }
 
 .secondaryButton:hover {
-  background: var(--color-surface-hover);
+  filter: brightness(1.15);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
