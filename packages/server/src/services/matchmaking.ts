@@ -17,12 +17,18 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
     }
 
     try {
-      // Try to find a match first
+      // Find the nearest eligible candidate, excluding anyone we already have an
+      // active game against (so we never get stuck on an ineligible nearest match).
       const matchResult = await client.query(
-        `SELECT id, user_id, rating FROM matchmaking_queue
+        `SELECT id, user_id, rating FROM matchmaking_queue mq
          WHERE user_id != $1
          AND rating BETWEEN $2 - (100 + EXTRACT(EPOCH FROM NOW() - queued_at) * 2)
                       AND $2 + (100 + EXTRACT(EPOCH FROM NOW() - queued_at) * 2)
+         AND NOT EXISTS (
+           SELECT 1 FROM games g WHERE g.status = 'active'
+           AND ((g.player1_id = $1 AND g.player2_id = mq.user_id)
+             OR (g.player1_id = mq.user_id AND g.player2_id = $1))
+         )
          ORDER BY ABS(rating - $2) ASC
          LIMIT 1
          FOR UPDATE SKIP LOCKED`,
@@ -31,19 +37,6 @@ export async function enterQueue(userId: string, rating: number, ratingDeviation
 
       if (matchResult.rows.length > 0) {
         const opponent = matchResult.rows[0];
-
-        // Skip if these players already have an active game against each other
-        const existingGame = await client.query(
-          `SELECT 1 FROM games WHERE status = 'active'
-           AND ((player1_id = $1 AND player2_id = $2) OR (player1_id = $2 AND player2_id = $1))
-           LIMIT 1`,
-          [userId, opponent.user_id],
-        );
-        if (existingGame.rows.length > 0) {
-          // Don't match — leave both in queue for other opponents
-          await client.query('COMMIT');
-          return { matched: false };
-        }
 
         // Remove opponent from queue
         await client.query('DELETE FROM matchmaking_queue WHERE id = $1', [opponent.id]);
@@ -119,11 +112,16 @@ export async function sweepQueue(): Promise<void> {
           await client.query('BEGIN');
 
           const matchResult = await client.query(
-            `SELECT id, user_id, rating FROM matchmaking_queue
+            `SELECT id, user_id, rating FROM matchmaking_queue mq
              WHERE user_id != $1
              AND user_id != ALL($3::uuid[])
              AND rating BETWEEN $2 - (100 + EXTRACT(EPOCH FROM NOW() - queued_at) * 2)
                           AND $2 + (100 + EXTRACT(EPOCH FROM NOW() - queued_at) * 2)
+             AND NOT EXISTS (
+               SELECT 1 FROM games g WHERE g.status = 'active'
+               AND ((g.player1_id = $1 AND g.player2_id = mq.user_id)
+                 OR (g.player1_id = mq.user_id AND g.player2_id = $1))
+             )
              ORDER BY ABS(rating - $2) ASC
              LIMIT 1
              FOR UPDATE SKIP LOCKED`,
@@ -132,18 +130,6 @@ export async function sweepQueue(): Promise<void> {
 
           if (matchResult.rows.length > 0) {
             const opponent = matchResult.rows[0];
-
-            // Skip if these players already have an active game against each other
-            const existingGame = await client.query(
-              `SELECT 1 FROM games WHERE status = 'active'
-               AND ((player1_id = $1 AND player2_id = $2) OR (player1_id = $2 AND player2_id = $1))
-               LIMIT 1`,
-              [entry.user_id, opponent.user_id],
-            );
-            if (existingGame.rows.length > 0) {
-              await client.query('COMMIT');
-              continue;
-            }
 
             // Remove both from queue
             await client.query('DELETE FROM matchmaking_queue WHERE user_id = ANY($1::uuid[])', [
