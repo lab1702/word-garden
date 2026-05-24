@@ -75,6 +75,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
   async function handlePasswordSubmit(e: FormEvent) {
     e.preventDefault();
     if (inFlight.current) return;
+    setShowPassword(false);
 
     const nextErrors: FieldErrors = {};
     const uErr = validateUsername(username);
@@ -105,6 +106,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
 
   async function handlePasskey() {
     if (inFlight.current) return;
+    setShowPassword(false);
 
     const uErr = validateUsername(username);
     if (uErr) {

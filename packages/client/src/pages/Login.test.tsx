@@ -124,6 +124,19 @@ describe('Password visibility toggle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
     expect(pw).toHaveAttribute('type', 'password');
   });
+
+  it('hides the password again after a failed submit', async () => {
+    const props = resolvedProps();
+    props.onLogin = vi.fn(() =>
+      Promise.reject(Object.assign(new Error('Invalid credentials'), { status: 401 })));
+    const { container } = render(<Login {...props} />);
+    fillCredentials();
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(screen.getByPlaceholderText('Password')).toHaveAttribute('type', 'text');
+    fireEvent.submit(container.querySelector('form')!);
+    await screen.findByText('Incorrect username or password');
+    expect(screen.getByPlaceholderText('Password')).toHaveAttribute('type', 'password');
+  });
 });
 
 describe('Server error mapping', () => {
