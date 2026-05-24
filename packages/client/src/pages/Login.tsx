@@ -65,7 +65,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
   }, [mode]);
 
   function switchMode(next: Mode) {
-    if (next === mode) return;
+    if (inFlight.current || next === mode) return;
     setMode(next);
     setPassword('');
     setShowPassword(false);

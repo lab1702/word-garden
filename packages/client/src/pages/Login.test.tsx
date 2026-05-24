@@ -57,6 +57,18 @@ describe('Login tabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Create Account' }));
     expect(screen.getByPlaceholderText('Username')).toHaveValue('wordsmith');
   });
+
+  it('does not switch tabs while a request is in flight', () => {
+    const props = pendingProps(); // onLogin never resolves
+    const { container } = render(<Login {...props} />);
+    fillCredentials();
+    fireEvent.submit(container.querySelector('form')!);
+    // A sign-in is now pending; clicking the Create Account tab must be ignored.
+    fireEvent.click(screen.getByRole('tab', { name: 'Create Account' }));
+    // Still on Sign In: the primary submit button keeps its in-flight label.
+    expect(screen.getByRole('button', { name: 'Signing in…' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Create Account' })).not.toBeInTheDocument();
+  });
 });
 
 describe('Create Account hints', () => {
@@ -147,5 +159,13 @@ describe('Loading and focus', () => {
   it('autofocuses the username field on mount', () => {
     render(<Login {...pendingProps()} />);
     expect(screen.getByPlaceholderText('Username')).toHaveFocus();
+  });
+
+  it('shows a creating-account label while registering', () => {
+    const { container } = render(<Login {...pendingProps()} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Create Account' }));
+    fillCredentials();
+    fireEvent.submit(container.querySelector('form')!);
+    expect(screen.getByRole('button', { name: 'Creating account…' })).toBeInTheDocument();
   });
 });
