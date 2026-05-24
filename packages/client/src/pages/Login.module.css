@@ -41,14 +41,50 @@
 .subtitle {
   text-align: center;
   color: var(--color-accent);
-  margin: 0 0 2rem;
+  margin: 0 0 1.75rem;
   font-style: italic;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  font-family: var(--font-main);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tabActive {
+  color: var(--color-text);
+  border-bottom-color: var(--color-gold);
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .input {
@@ -60,12 +96,58 @@
   background: var(--color-bg);
   color: var(--color-text);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 3px var(--color-accent-muted);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.passwordWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordWrap .input {
+  flex: 1;
+  padding-right: 4.5rem;
+}
+
+.reveal {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  cursor: pointer;
+  padding: 0.4rem 0.5rem;
+  min-height: 36px;
+}
+
+.reveal:hover {
+  filter: brightness(1.15);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
 }
 
 .error {
@@ -75,15 +157,9 @@
   text-align: center;
 }
 
-.buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
 .primaryButton,
 .secondaryButton {
-  flex: 1;
+  width: 100%;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
   font-size: 1rem;
