@@ -1,6 +1,15 @@
 const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 const BASE = `${BASE_PATH}/api`;
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { ...(options?.headers as Record<string, string>) };
   if (options?.body) {
@@ -15,7 +24,7 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(body.error || res.statusText);
+    throw new ApiError(body.error || res.statusText, res.status);
   }
   return res.json();
 }
