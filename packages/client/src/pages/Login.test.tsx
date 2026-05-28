@@ -140,11 +140,12 @@ describe('Password visibility toggle', () => {
 });
 
 describe('Server error mapping', () => {
-  it('maps a 409 to a username-field error', async () => {
+  it('maps a 409 to a username-field error when registering', async () => {
     const props = resolvedProps();
-    props.onLogin = vi.fn(() =>
+    props.onRegister = vi.fn(() =>
       Promise.reject(Object.assign(new Error('Username already taken'), { status: 409 })));
     const { container } = render(<Login {...props} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Create Account' }));
     fillCredentials();
     fireEvent.submit(container.querySelector('form')!);
     expect(await screen.findByText('That username is taken — try another')).toBeInTheDocument();
@@ -159,6 +160,17 @@ describe('Server error mapping', () => {
     fireEvent.submit(container.querySelector('form')!);
     expect(await screen.findByText('Incorrect username or password')).toBeInTheDocument();
   });
+
+  it('shows a friendly message when a passkey sign-in fails without an HTTP status', async () => {
+    const props = resolvedProps();
+    // A dismissed/timed-out WebAuthn prompt rejects with a bare Error (no status).
+    props.onLoginPasskey = vi.fn(() =>
+      Promise.reject(new Error('The operation either timed out or was not allowed')));
+    render(<Login {...props} />);
+    fireEvent.change(screen.getByPlaceholderText('Username'), { target: { value: 'alice' } });
+    fireEvent.click(screen.getByRole('button', { name: /Use a passkey/ }));
+    expect(await screen.findByText(/Could not sign in with a passkey/)).toBeInTheDocument();
+  });
 });
 
 describe('Loading and focus', () => {
@@ -172,6 +184,16 @@ describe('Loading and focus', () => {
   it('autofocuses the username field on mount', () => {
     render(<Login {...pendingProps()} />);
     expect(screen.getByPlaceholderText('Username')).toHaveFocus();
+  });
+
+  it('shows the in-flight label on the passkey button, not the primary, during a passkey sign-in', () => {
+    render(<Login {...pendingProps()} />); // onLoginPasskey never resolves
+    fireEvent.change(screen.getByPlaceholderText('Username'), { target: { value: 'alice' } });
+    fireEvent.click(screen.getByRole('button', { name: /Use a passkey/ }));
+    // The passkey button reports progress...
+    expect(screen.getByRole('button', { name: /Signing in/ })).toBeInTheDocument();
+    // ...while the primary submit button keeps its idle label.
+    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
   });
 
   it('shows a creating-account label while registering', () => {
