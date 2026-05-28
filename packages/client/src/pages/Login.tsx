@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, type FormEvent } from 'react';
 import styles from './Login.module.css';
 
 type Mode = 'signin' | 'register';
+type Pending = 'password' | 'passkey' | null;
 
 interface LoginProps {
   onLogin: (username: string, password: string) => Promise<any>;
@@ -40,11 +41,23 @@ function validatePassword(password: string): string | undefined {
   return undefined;
 }
 
-function mapError(err: any): FieldErrors {
+function mapError(err: any, opts: { isRegister: boolean; isPasskey: boolean }): FieldErrors {
   const status = err?.status;
-  if (status === 409) return { username: 'That username is taken — try another' };
+  // A 409 conflict only arises when creating an account, never when signing in.
+  if (status === 409 && opts.isRegister) return { username: 'That username is taken — try another' };
   if (status === 401) return { form: 'Incorrect username or password' };
-  return { form: err?.message || 'Something went wrong' };
+  if (typeof status === 'number') return { form: err?.message || 'Something went wrong' };
+  // No HTTP status means the request never reached the server: a dismissed
+  // passkey prompt or a network failure. Show a friendly message instead of a
+  // raw browser/error string.
+  if (opts.isPasskey) {
+    return {
+      form: opts.isRegister
+        ? 'Could not create a passkey. The prompt may have been dismissed — please try again.'
+        : 'Could not sign in with a passkey. The prompt may have been dismissed — please try again.',
+    };
+  }
+  return { form: 'Something went wrong. Please check your connection and try again.' };
 }
 
 export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }: LoginProps) {
@@ -53,7 +66,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState<Pending>(null);
   const inFlight = useRef(false);
   const usernameRef = useRef<HTMLInputElement>(null);
 
@@ -89,7 +102,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
 
     inFlight.current = true;
     setErrors({});
-    setLoading(true);
+    setPending('password');
     try {
       if (isRegister) {
         await onRegister(username, password);
@@ -97,9 +110,9 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
         await onLogin(username, password);
       }
     } catch (err: any) {
-      setErrors(mapError(err));
+      setErrors(mapError(err, { isRegister, isPasskey: false }));
     } finally {
-      setLoading(false);
+      setPending(null);
       inFlight.current = false;
     }
   }
@@ -116,7 +129,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
 
     inFlight.current = true;
     setErrors({});
-    setLoading(true);
+    setPending('passkey');
     try {
       if (isRegister) {
         await onRegisterPasskey(username);
@@ -124,17 +137,20 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
         await onLoginPasskey(username);
       }
     } catch (err: any) {
-      setErrors(mapError(err));
+      setErrors(mapError(err, { isRegister, isPasskey: true }));
     } finally {
-      setLoading(false);
+      setPending(null);
       inFlight.current = false;
     }
   }
 
-  const primaryLabel = loading
+  const busy = pending !== null;
+  const primaryLabel = pending === 'password'
     ? (isRegister ? 'Creating account…' : 'Signing in…')
     : (isRegister ? 'Create Account' : 'Sign In');
-  const passkeyLabel = isRegister ? 'Create with a passkey' : 'Use a passkey';
+  const passkeyLabel = pending === 'passkey'
+    ? (isRegister ? 'Creating passkey…' : 'Signing in…')
+    : (isRegister ? 'Create with a passkey' : 'Use a passkey');
 
   return (
     <div className={styles.container}>
@@ -209,7 +225,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
 
           {errors.form && <p className={styles.error}>{errors.form}</p>}
 
-          <button type="submit" className={styles.primaryButton} disabled={loading}>
+          <button type="submit" className={styles.primaryButton} disabled={busy}>
             {primaryLabel}
           </button>
 
@@ -218,7 +234,7 @@ export function Login({ onLogin, onRegister, onLoginPasskey, onRegisterPasskey }
           <button
             type="button"
             className={styles.secondaryButton}
-            disabled={loading || !username}
+            disabled={busy || !username}
             onClick={handlePasskey}
           >
             🔑 {passkeyLabel}
